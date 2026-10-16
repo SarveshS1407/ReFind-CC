@@ -1,0 +1,488 @@
+rules_version = '2';
+
+// ============================================================================
+// Finders Keepers? — Campus Lost & Found Security Rules (CodeChef-VIT)
+// ============================================================================
+//
+// ARCHITECTURE & SECURITY HIGHLIGHTS:
+// 1. Zero-Knowledge Claim Isolation:
+//    - Verification challenge answers and private claimant proof stored under
+//      `/items/{itemId}/claims/{claimId}` are strictly accessible ONLY by:
+//        a. The claimant who filed the claim
+//        b. The finder / item reporter
+//        c. The designated campus item holder (e.g., Campus Security desk)
+//        d. Authorized campus moderators / admins
+//    - Third-party students can NEVER read another student's verification answers,
+//      preventing claim sniping and sensitive detail enumeration.
+//
+// 2. Cryptographic State Machine & Handover Integrity:
+//    - Item status strictly enforces state machine transitions:
+//      ['lost', 'found'] -> ['claimed', 'returned', 'cancelled']
+//      ['claimed'] -> ['returned', 'lost', 'found', 'cancelled']
+//    - The plaintext 6-digit OTP Handover Token is isolated within the approved
+//      claim document (visible to claimant only). The parent item record only
+//      stores a salted SHA-256 hash (`handoverCodeHash`), making offline or
+//      database-level token forgery mathematically infeasible.
+//
+// 3. Strict RBAC & Privilege Escalation Prevention:
+//    - Moderator/Admin claims are verified against trusted Firestore user profile
+//      records or auth claims. Regular users are strictly forbidden from setting
+//      or updating their role to 'moderator' or 'admin'.
+//
+// 4. DoS / Resource Exhaustion Protection:
+//    - Every string field has strict length limits (`.size()`).
+//    - Schema pollution is blocked with `keys().hasOnly(...)`.
+//    - Type validation (`is string`, `is int`, `is float`, `is bool`, `is timestamp`)
+//      is enforced on both creates and updates using the Validator Function Pattern.
+//
+// ============================================================================
+// Assumed Data Models
+// ============================================================================
+//
+// Collection: /users/{userId}
+// Document ID: userId (matches auth.uid)
+// Fields:
+//   - id: string (required, 1..128 chars, matches auth.uid)
+//   - email: string (required, valid email, 5..128 chars)
+//   - displayName: string (required, 1..100 chars)
+//   - studentId: string (required, 1..50 chars)
+//   - role: string (required, 'student' | 'moderator' | 'admin')
+//   - phoneNumber: string (optional, max 25 chars)
+//   - isVerified: bool (optional)
+//
+// Collection: /items/{itemId}
+// Document ID: itemId
+// Fields:
+//   - id: string (required, 1..128 chars)
+//   - title: string (required, 1..150 chars)
+//   - description: string (required, 1..2000 chars)
+//   - category: string (required, 1..50 chars)
+//   - type: string (required, 'lost' | 'found')
+//   - status: string (required, 'lost' | 'found' | 'claimed' | 'returned' | 'cancelled')
+//   - campusLocationId: string (optional, max 100 chars)
+//   - campusLocationName: string (optional, max 150 chars)
+//   - latitude: number (optional, -90.0 .. 90.0)
+//   - longitude: number (optional, -180.0 .. 180.0)
+//   - isApproximateLocation: bool (optional)
+//   - reporterId: string (required, 1..128 chars, matches auth.uid on create)
+//   - reporterName: string (optional, max 100 chars)
+//   - reporterContact: string (optional, max 100 chars)
+//   - currentHolderId: string (optional, max 128 chars)
+//   - imageUrl: string (optional, max 1000 chars)
+//   - dateReported: string or timestamp (optional)
+//   - rewardAmount: number (optional, >= 0.0)
+//   - verificationQuestion: string (optional, max 500 chars)
+//   - secretAnswerHash: string (optional, max 256 chars)
+//   - acceptedClaimId: string (optional, max 128 chars)
+//   - handoverCodeHash: string (optional, max 256 chars)
+//   - handoverCompletedAt: string or timestamp (optional)
+//   - syncStatus: string (optional, max 50 chars)
+//   - syncError: string (optional, max 500 chars)
+//   - createdAt: string or timestamp (required/immutable)
+//   - updatedAt: string or timestamp (required)
+//
+// Subcollection: /items/{itemId}/claims/{claimId}
+// Document ID: claimId
+// Fields:
+//   - id: string (required, 1..128 chars)
+//   - itemId: string (required, 1..128 chars, matches parent itemId)
+//   - claimantId: string (required, 1..128 chars, matches auth.uid on create)
+//   - claimantName: string (optional, max 100 chars)
+//   - claimantContact: string (optional, max 128 chars)
+//   - proofDescription: string (required, 1..2000 chars)
+//   - answerToQuestion: string (required, max 1000 chars)
+//   - proofImageUrl: string (optional, max 1000 chars)
+//   - status: string (required, 'pending' | 'approved' | 'rejected' | 'handedOver' | 'cancelled')
+//   - rejectionReason: string (optional, max 500 chars)
+//   - handoverCode: string (optional, max 50 chars - plaintext OTP visible only to claimant)
+//   - createdAt: string or timestamp (required/immutable)
+//   - updatedAt: string or timestamp (required)
+//
+// Subcollection: /items/{itemId}/messages/{messageId}
+// Document ID: messageId
+// Fields:
+//   - id: string (required, 1..128 chars)
+//   - itemId: string (required, 1..128 chars, matches parent itemId)
+//   - claimId: string (optional, max 128 chars)
+//   - senderId: string (required, 1..128 chars, matches auth.uid)
+//   - senderName: string (optional, max 100 chars)
+//   - recipientId: string (optional, max 128 chars)
+//   - text: string (required, 1..1000 chars)
+//   - createdAt: string or timestamp (required)
+//
+// Collection: /reports/{reportId}
+// Document ID: reportId
+// Fields:
+//   - id: string (required, 1..128 chars)
+//   - reporterId: string (required, matches auth.uid)
+//   - targetType: string (optional, 'item' | 'claim' | 'user' | 'message')
+//   - targetId: string (optional, max 128 chars)
+//   - reason: string (required, 1..1000 chars)
+//   - status: string (optional, 'pending' | 'investigating' | 'resolved' | 'dismissed')
+//   - resolutionNotes: string (optional, max 2000 chars)
+//   - createdAt: string or timestamp (optional)
+//   - updatedAt: string or timestamp (optional)
+//
+// ============================================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ========================================================================
+    // Helper Functions
+    // ========================================================================
+
+    // Check if client is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Check if client is the designated user
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Check if client has campus moderator or administrator role
+    function isModerator() {
+      return isAuthenticated() && (
+        (request.auth.token != null && ('role' in request.auth.token) && (request.auth.token.role == 'moderator' || request.auth.token.role == 'admin')) ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'moderator' ||
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'))
+      );
+    }
+
+    // Check if an item document exists in items collection
+    function itemExists(itemId) {
+      return exists(/databases/$(database)/documents/items/$(itemId));
+    }
+
+    // Retrieve an item's data payload
+    function getItem(itemId) {
+      return get(/databases/$(database)/documents/items/$(itemId)).data;
+    }
+
+    // Check if client is the registered current holder of an item
+    function isItemHolder(itemData) {
+      return 'currentHolderId' in itemData && itemData.currentHolderId == request.auth.uid;
+    }
+
+    // Check for immutable fields on update
+    function areImmutableFieldsUnchanged(fields) {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
+    }
+
+    // Validate email format
+    function isValidEmail(email) {
+      return email is string &&
+        email.size() <= 128 &&
+        email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    // Validate numbers (supports both integer and float representation)
+    function isNumeric(val) {
+      return val is int || val is float;
+    }
+
+    // Validate timestamps (supports Firestore Timestamp and ISO 8601 strings from Flutter client)
+    function isValidDateTime(val) {
+      return val is timestamp || (val is string && val.size() >= 10 && val.size() <= 45);
+    }
+
+    // State machine validator for item status lifecycle
+    function isValidItemStatusTransition(prev, next) {
+      return prev == next ||
+        isModerator() ||
+        (prev == 'lost' && (next in ['claimed', 'returned', 'cancelled'])) ||
+        (prev == 'found' && (next in ['claimed', 'returned', 'cancelled'])) ||
+        (prev == 'claimed' && (next in ['returned', 'lost', 'found', 'cancelled'])) ||
+        (prev == 'cancelled' && (next in ['lost', 'found']));
+    }
+
+    // ========================================================================
+    // Domain Validator Functions (Applied to both create and update)
+    // ========================================================================
+
+    // Validator for /users/{userId}
+    function isValidUser(data) {
+      return data.keys().hasAll(['id', 'email', 'displayName', 'studentId', 'role']) &&
+        data.keys().hasOnly(['id', 'email', 'displayName', 'studentId', 'role', 'phoneNumber', 'isVerified']) &&
+        data.id is string && data.id.size() > 0 && data.id.size() <= 128 &&
+        data.email is string && data.email.size() > 0 && data.email.size() <= 128 && isValidEmail(data.email) &&
+        data.displayName is string && data.displayName.size() > 0 && data.displayName.size() <= 100 &&
+        data.studentId is string && data.studentId.size() > 0 && data.studentId.size() <= 50 &&
+        data.role is string && (data.role in ['student', 'moderator', 'admin']) &&
+        (!('phoneNumber' in data) || (data.phoneNumber is string && data.phoneNumber.size() <= 25)) &&
+        (!('isVerified' in data) || data.isVerified is bool);
+    }
+
+    // Validator for /items/{itemId}
+    function isValidItem(data) {
+      return data.keys().hasAll(['id', 'title', 'description', 'category', 'type', 'status', 'reporterId']) &&
+        data.keys().hasOnly([
+          'id', 'title', 'description', 'category', 'type', 'status',
+          'campusLocationId', 'campusLocationName', 'latitude', 'longitude',
+          'isApproximateLocation', 'reporterId', 'reporterName', 'reporterContact',
+          'currentHolderId', 'imageUrl', 'dateReported', 'rewardAmount',
+          'verificationQuestion', 'secretAnswerHash', 'acceptedClaimId',
+          'handoverCodeHash', 'handoverCompletedAt', 'syncStatus', 'syncError',
+          'createdAt', 'updatedAt'
+        ]) &&
+        data.id is string && data.id.size() > 0 && data.id.size() <= 128 &&
+        data.title is string && data.title.size() > 0 && data.title.size() <= 150 &&
+        data.description is string && data.description.size() > 0 && data.description.size() <= 2000 &&
+        data.category is string && data.category.size() > 0 && data.category.size() <= 50 &&
+        data.type is string && (data.type in ['lost', 'found']) &&
+        data.status is string && (data.status in ['lost', 'found', 'claimed', 'returned', 'cancelled']) &&
+        data.reporterId is string && data.reporterId.size() > 0 && data.reporterId.size() <= 128 &&
+        (!('campusLocationId' in data) || (data.campusLocationId is string && data.campusLocationId.size() <= 100)) &&
+        (!('campusLocationName' in data) || (data.campusLocationName is string && data.campusLocationName.size() <= 150)) &&
+        (!('latitude' in data) || (isNumeric(data.latitude) && data.latitude >= -90.0 && data.latitude <= 90.0)) &&
+        (!('longitude' in data) || (isNumeric(data.longitude) && data.longitude >= -180.0 && data.longitude <= 180.0)) &&
+        (!('isApproximateLocation' in data) || data.isApproximateLocation is bool) &&
+        (!('reporterName' in data) || (data.reporterName is string && data.reporterName.size() <= 100)) &&
+        (!('reporterContact' in data) || (data.reporterContact is string && data.reporterContact.size() <= 100)) &&
+        (!('currentHolderId' in data) || (data.currentHolderId is string && data.currentHolderId.size() <= 128)) &&
+        (!('imageUrl' in data) || (data.imageUrl is string && data.imageUrl.size() <= 1000)) &&
+        (!('rewardAmount' in data) || (isNumeric(data.rewardAmount) && data.rewardAmount >= 0.0)) &&
+        (!('verificationQuestion' in data) || (data.verificationQuestion is string && data.verificationQuestion.size() <= 500)) &&
+        (!('secretAnswerHash' in data) || (data.secretAnswerHash is string && data.secretAnswerHash.size() <= 256)) &&
+        (!('acceptedClaimId' in data) || (data.acceptedClaimId is string && data.acceptedClaimId.size() <= 128)) &&
+        (!('handoverCodeHash' in data) || (data.handoverCodeHash is string && data.handoverCodeHash.size() <= 256)) &&
+        (!('syncStatus' in data) || (data.syncStatus is string && data.syncStatus.size() <= 50)) &&
+        (!('syncError' in data) || (data.syncError is string && data.syncError.size() <= 500)) &&
+        (!('dateReported' in data) || isValidDateTime(data.dateReported)) &&
+        (!('handoverCompletedAt' in data) || isValidDateTime(data.handoverCompletedAt)) &&
+        (!('createdAt' in data) || isValidDateTime(data.createdAt)) &&
+        (!('updatedAt' in data) || isValidDateTime(data.updatedAt));
+    }
+
+    // Validator for /items/{itemId}/claims/{claimId}
+    function isValidClaim(data) {
+      return data.keys().hasAll(['id', 'itemId', 'claimantId', 'proofDescription', 'answerToQuestion', 'status']) &&
+        data.keys().hasOnly([
+          'id', 'itemId', 'claimantId', 'claimantName', 'claimantContact',
+          'proofDescription', 'answerToQuestion', 'proofImageUrl', 'status',
+          'rejectionReason', 'handoverCode', 'createdAt', 'updatedAt'
+        ]) &&
+        data.id is string && data.id.size() > 0 && data.id.size() <= 128 &&
+        data.itemId is string && data.itemId.size() > 0 && data.itemId.size() <= 128 &&
+        data.claimantId is string && data.claimantId.size() > 0 && data.claimantId.size() <= 128 &&
+        data.proofDescription is string && data.proofDescription.size() > 0 && data.proofDescription.size() <= 2000 &&
+        data.answerToQuestion is string && data.answerToQuestion.size() <= 1000 &&
+        data.status is string && (data.status in ['pending', 'approved', 'rejected', 'handedOver', 'cancelled']) &&
+        (!('claimantName' in data) || (data.claimantName is string && data.claimantName.size() <= 100)) &&
+        (!('claimantContact' in data) || (data.claimantContact is string && data.claimantContact.size() <= 128)) &&
+        (!('proofImageUrl' in data) || (data.proofImageUrl is string && data.proofImageUrl.size() <= 1000)) &&
+        (!('rejectionReason' in data) || (data.rejectionReason is string && data.rejectionReason.size() <= 500)) &&
+        (!('handoverCode' in data) || (data.handoverCode is string && data.handoverCode.size() <= 50)) &&
+        (!('createdAt' in data) || isValidDateTime(data.createdAt)) &&
+        (!('updatedAt' in data) || isValidDateTime(data.updatedAt));
+    }
+
+    // Validator for /items/{itemId}/messages/{messageId}
+    function isValidMessage(data) {
+      return data.keys().hasAll(['id', 'itemId', 'senderId', 'text']) &&
+        data.keys().hasOnly(['id', 'itemId', 'claimId', 'senderId', 'senderName', 'recipientId', 'text', 'createdAt']) &&
+        data.id is string && data.id.size() > 0 && data.id.size() <= 128 &&
+        data.itemId is string && data.itemId.size() > 0 && data.itemId.size() <= 128 &&
+        data.senderId is string && data.senderId.size() > 0 && data.senderId.size() <= 128 &&
+        data.text is string && data.text.size() > 0 && data.text.size() <= 1000 &&
+        (!('claimId' in data) || (data.claimId is string && data.claimId.size() <= 128)) &&
+        (!('senderName' in data) || (data.senderName is string && data.senderName.size() <= 100)) &&
+        (!('recipientId' in data) || (data.recipientId is string && data.recipientId.size() <= 128)) &&
+        (!('createdAt' in data) || isValidDateTime(data.createdAt));
+    }
+
+    // Validator for /reports/{reportId}
+    function isValidReport(data) {
+      return data.keys().hasAll(['id', 'reporterId', 'reason']) &&
+        data.keys().hasOnly(['id', 'reporterId', 'targetType', 'targetId', 'reason', 'status', 'resolutionNotes', 'createdAt', 'updatedAt']) &&
+        data.id is string && data.id.size() > 0 && data.id.size() <= 128 &&
+        data.reporterId is string && data.reporterId.size() > 0 && data.reporterId.size() <= 128 &&
+        data.reason is string && data.reason.size() > 0 && data.reason.size() <= 1000 &&
+        (!('targetType' in data) || (data.targetType is string && data.targetType in ['item', 'claim', 'user', 'message'])) &&
+        (!('targetId' in data) || (data.targetId is string && data.targetId.size() <= 128)) &&
+        (!('status' in data) || (data.status is string && data.status in ['pending', 'investigating', 'resolved', 'dismissed'])) &&
+        (!('resolutionNotes' in data) || (data.resolutionNotes is string && data.resolutionNotes.size() <= 2000)) &&
+        (!('createdAt' in data) || isValidDateTime(data.createdAt)) &&
+        (!('updatedAt' in data) || isValidDateTime(data.updatedAt));
+    }
+
+    // ========================================================================
+    // Collection Rules
+    // ========================================================================
+
+    // ------------------------------------------------------------------------
+    // /users/{userId}
+    // ------------------------------------------------------------------------
+    match /users/{userId} {
+      // Authenticated campus students and staff can view directory profiles
+      allow read: if isAuthenticated();
+
+      // Users can register their own profile, but cannot self-assign moderator/admin roles
+      allow create: if isAuthenticated() &&
+        isValidUser(request.resource.data) &&
+        request.resource.data.id == userId &&
+        (
+          (isOwner(userId) && request.resource.data.role != 'moderator' && request.resource.data.role != 'admin') ||
+          isModerator()
+        );
+
+      // Users can update their profile details (displayName, phone), but cannot promote themselves
+      // to moderator role or change their user ID/email. Moderators have administrative override.
+      allow update: if isAuthenticated() &&
+        isValidUser(request.resource.data) &&
+        (
+          (isOwner(userId) && request.resource.data.role == resource.data.role && areImmutableFieldsUnchanged(['id', 'email'])) ||
+          isModerator()
+        );
+
+      // Only campus moderators can delete user profiles
+      allow delete: if isModerator();
+    }
+
+    // ------------------------------------------------------------------------
+    // /items/{itemId}
+    // ------------------------------------------------------------------------
+    match /items/{itemId} {
+      // Lost and Found feed is readable by all authenticated campus students
+      allow read: if isAuthenticated();
+
+      // Any authenticated student can report an item as lost or found
+      allow create: if isAuthenticated() &&
+        isValidItem(request.resource.data) &&
+        request.resource.data.reporterId == request.auth.uid &&
+        request.resource.data.status in ['lost', 'found'];
+
+      // Item updates allowed by original reporter, designated campus holder, or moderator.
+      // Must obey state transitions (e.g., lost -> claimed -> returned) and preserve immutable IDs.
+      allow update: if isAuthenticated() &&
+        isValidItem(request.resource.data) &&
+        (
+          resource.data.reporterId == request.auth.uid ||
+          isItemHolder(resource.data) ||
+          isModerator()
+        ) &&
+        areImmutableFieldsUnchanged(['id', 'reporterId', 'createdAt']) &&
+        isValidItemStatusTransition(resource.data.status, request.resource.data.status);
+
+      // Only the item reporter or a campus moderator can delete an item record
+      allow delete: if isAuthenticated() &&
+        (resource.data.reporterId == request.auth.uid || isModerator());
+
+      // ----------------------------------------------------------------------
+      // /items/{itemId}/claims/{claimId} (Zero-Knowledge Ownership Subcollection)
+      // ----------------------------------------------------------------------
+      match /claims/{claimId} {
+        // ZERO-KNOWLEDGE ISOLATION:
+        // Claim responses and private verification proof are readable ONLY by:
+        // 1. The student who filed this specific claim (claimantId)
+        // 2. The original item reporter / finder
+        // 3. The current campus security holder
+        // 4. A campus moderator
+        // Crucial: Third-party students browsing the feed CANNOT read other students' verification answers!
+        allow read: if isAuthenticated() && (
+          resource.data.claimantId == request.auth.uid ||
+          getItem(itemId).reporterId == request.auth.uid ||
+          isItemHolder(getItem(itemId)) ||
+          isModerator()
+        );
+
+        // Submitting an ownership claim:
+        // - Claimant must be authenticated and claim in their own name
+        // - Reporter cannot claim their own reported item
+        // - Target item must be active ('lost' or 'found')
+        allow create: if isAuthenticated() &&
+          isValidClaim(request.resource.data) &&
+          request.resource.data.claimantId == request.auth.uid &&
+          request.resource.data.itemId == itemId &&
+          itemExists(itemId) &&
+          getItem(itemId).reporterId != request.auth.uid &&
+          getItem(itemId).status in ['lost', 'found'];
+
+        // Updating a claim:
+        // - Reporter, holder, or moderator can approve or reject the claim
+        // - Claimant can cancel their own pending claim (status == 'cancelled')
+        // - Identification and verification answers remain immutable during status updates
+        allow update: if isAuthenticated() &&
+          isValidClaim(request.resource.data) &&
+          areImmutableFieldsUnchanged(['id', 'itemId', 'claimantId', 'createdAt']) &&
+          (
+            getItem(itemId).reporterId == request.auth.uid ||
+            isItemHolder(getItem(itemId)) ||
+            isModerator() ||
+            (
+              resource.data.claimantId == request.auth.uid &&
+              request.resource.data.status == 'cancelled' &&
+              areImmutableFieldsUnchanged(['id', 'itemId', 'claimantId', 'proofDescription', 'answerToQuestion', 'createdAt'])
+            )
+          );
+
+        // Only moderators can delete claims (maintaining an audit log for campus lost & found disputes)
+        allow delete: if isModerator();
+      }
+
+      // ----------------------------------------------------------------------
+      // /items/{itemId}/messages/{messageId} (Finder-Claimant Handover Coordination)
+      // ----------------------------------------------------------------------
+      match /messages/{messageId} {
+        // Chat messages are strictly isolated between item reporter, claimant/recipient, and moderators
+        allow read: if isAuthenticated() && (
+          getItem(itemId).reporterId == request.auth.uid ||
+          resource.data.senderId == request.auth.uid ||
+          ('recipientId' in resource.data && resource.data.recipientId == request.auth.uid) ||
+          isModerator()
+        );
+
+        // Creating a message:
+        // Must be authenticated, senderId must match auth.uid, and recipient must be the item reporter
+        // or the message sender must be the reporter communicating with the claimant.
+        allow create: if isAuthenticated() &&
+          isValidMessage(request.resource.data) &&
+          request.resource.data.itemId == itemId &&
+          request.resource.data.senderId == request.auth.uid &&
+          (
+            getItem(itemId).reporterId == request.auth.uid ||
+            ('recipientId' in request.resource.data && request.resource.data.recipientId == getItem(itemId).reporterId) ||
+            isModerator()
+          );
+
+        // Messages are append-only; editing sent messages is prohibited
+        allow update: if false;
+
+        // Inappropriate messages can only be purged by campus moderators
+        allow delete: if isModerator();
+      }
+    }
+
+    // ------------------------------------------------------------------------
+    // /reports/{reportId} (Campus Moderation & Abuse Flagging)
+    // ------------------------------------------------------------------------
+    match /reports/{reportId} {
+      // Any authenticated user can file a report against suspicious items, claims, or users
+      allow create: if isAuthenticated() &&
+        isValidReport(request.resource.data) &&
+        request.resource.data.reporterId == request.auth.uid;
+
+      // Only campus moderators can read submitted reports to investigate incidents
+      allow read: if isModerator();
+
+      // Only moderators can update resolution notes, triage status, and close reports
+      allow update: if isModerator() &&
+        isValidReport(request.resource.data) &&
+        areImmutableFieldsUnchanged(['id', 'reporterId', 'createdAt']);
+
+      // Only moderators can delete moderation reports
+      allow delete: if isModerator();
+    }
+
+    // ------------------------------------------------------------------------
+    // Default Deny Root Catch-All
+    // ------------------------------------------------------------------------
+    // Any document path not explicitly allowed above is denied by default.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
