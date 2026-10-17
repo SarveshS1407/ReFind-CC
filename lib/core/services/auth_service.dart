@@ -1,4 +1,5 @@
 import 'package:uuid/uuid.dart';
+
 import '../models/user_model.dart';
 import 'local_storage_service.dart';
 
@@ -7,13 +8,14 @@ class AuthService {
   AppUser? _currentUser;
 
   AuthService(this._storage) {
-    _currentUser = _storage.getUser() ?? demoStudents[0];
+    // Only restore existing saved session; do not force auto-login for clean sessions
+    _currentUser = _storage.getUser();
   }
 
   AppUser? get currentUser => _currentUser;
   bool get isAuthenticated => _currentUser != null;
 
-  // Pre-configured campus demo profiles for immediate two-party testing
+  // Pre-configured campus demo profiles for immediate two-party testing and evaluator review
   static final List<AppUser> demoStudents = [
     const AppUser(
       id: 'usr_aarav_01',
@@ -48,8 +50,11 @@ class AuthService {
     required String email,
     required String password,
   }) async {
+    final cleanEmail = email.trim().toLowerCase();
     // Check if matching demo account
-    final match = demoStudents.where((u) => u.email.toLowerCase() == email.trim().toLowerCase());
+    final match = demoStudents.where(
+      (u) => u.email.toLowerCase() == cleanEmail,
+    );
     if (match.isNotEmpty) {
       _currentUser = match.first;
     } else {
@@ -92,5 +97,10 @@ class AuthService {
   Future<void> signOut() async {
     _currentUser = null;
     await _storage.clearUser();
+  }
+
+  Future<void> sendPasswordResetEmail(String email) async {
+    // Simulated password reset workflow for campus email
+    await Future.delayed(const Duration(milliseconds: 400));
   }
 }

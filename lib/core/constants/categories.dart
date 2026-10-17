@@ -56,7 +56,8 @@ class CategoryConstants {
       id: 'books_notes',
       name: 'Books & Stationery',
       icon: Icons.menu_book_outlined,
-      exampleHints: 'Textbooks, Class notebooks, Scientific calculators, Pencil cases',
+      exampleHints:
+          'Textbooks, Class notebooks, Scientific calculators, Pencil cases',
     ),
     ItemCategory(
       id: 'clothing',

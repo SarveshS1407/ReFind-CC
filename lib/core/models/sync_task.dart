@@ -1,13 +1,9 @@
-enum SyncTaskStatus {
-  pending,
-  syncing,
-  failed,
-  completed,
-}
+enum SyncTaskStatus { pending, syncing, failed, completed }
 
 class OfflineSyncTask {
   final String id;
-  final String type; // 'create_item' | 'submit_claim' | 'approve_claim' | 'verify_handover'
+  final String
+  type; // 'create_item' | 'submit_claim' | 'approve_claim' | 'verify_handover'
   final Map<String, dynamic> payload;
   final DateTime createdAt;
   final int retryCount;

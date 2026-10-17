@@ -1,18 +1,8 @@
 enum ItemType { lost, found }
 
-enum ItemStatus {
-  lost,
-  found,
-  claimed,
-  returned,
-  cancelled,
-}
+enum ItemStatus { lost, found, claimed, returned, cancelled }
 
-enum SyncStatus {
-  synced,
-  queuedLocally,
-  syncError,
-}
+enum SyncStatus { synced, queuedLocally, syncError }
 
 class ItemModel {
   final String id;
@@ -32,7 +22,7 @@ class ItemModel {
   final String? imageUrl;
   final DateTime dateReported;
   final double? rewardAmount;
-  
+
   // Ownership Verification Fields
   // For Found Items: A non-public challenge question set by finder
   // (e.g. "What sticker is on the back?", "What is the initials engraved?")

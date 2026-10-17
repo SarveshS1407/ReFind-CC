@@ -1,9 +1,4 @@
-enum ClaimStatus {
-  pending,
-  approved,
-  rejected,
-  handedOver,
-}
+enum ClaimStatus { pending, approved, rejected, handedOver }
 
 class ClaimModel {
   final String id;
@@ -12,19 +7,19 @@ class ClaimModel {
   final String claimantName;
   final String claimantContact;
   final String proofDescription;
-  
+
   // Non-public answer to the finder's verification challenge
   // PRIVACY: Only readable by the Item Reporter and the Claimant!
   final String answerToQuestion;
   final String? proofImageUrl;
-  
+
   final ClaimStatus status;
   final String? rejectionReason;
-  
+
   // 6-digit plain OTP generated upon approval, visible only to claimant.
   // The finder validates this token before physically handing over the item.
   final String? handoverCode;
-  
+
   final DateTime createdAt;
   final DateTime updatedAt;
 

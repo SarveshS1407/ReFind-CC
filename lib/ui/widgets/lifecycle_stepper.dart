@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../core/models/item_model.dart';
 import '../../core/constants/app_theme.dart';
 
@@ -6,11 +7,7 @@ class LifecycleStepper extends StatelessWidget {
   final ItemStatus status;
   final ItemType type;
 
-  const LifecycleStepper({
-    super.key,
-    required this.status,
-    required this.type,
-  });
+  const LifecycleStepper({super.key, required this.status, required this.type});
 
   @override
   Widget build(BuildContext context) {
@@ -58,7 +55,7 @@ class LifecycleStepper extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.timeline, size: 18, color: AppTheme.primaryBlue),
+              const Icon(Icons.timeline, size: 18, color: AppTheme.primaryTeal),
               const SizedBox(width: 8),
               const Text(
                 'Item Lifecycle Status',
@@ -88,7 +85,9 @@ class LifecycleStepper extends StatelessWidget {
                 return Expanded(
                   child: Container(
                     height: 3,
-                    color: isPassed ? AppTheme.statusReturned : AppTheme.cardBorder,
+                    color: isPassed
+                        ? AppTheme.statusReturned
+                        : AppTheme.cardBorder,
                   ),
                 );
               }
@@ -105,7 +104,7 @@ class LifecycleStepper extends StatelessWidget {
                 circleBg = AppTheme.statusReturned;
                 iconColor = Colors.white;
               } else if (isCurrent) {
-                circleBg = AppTheme.primaryBlue;
+                circleBg = AppTheme.primaryTeal;
                 iconColor = Colors.white;
               } else {
                 circleBg = Colors.grey.shade100;
@@ -142,7 +141,9 @@ class LifecycleStepper extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w500,
-                    color: isCurrent ? AppTheme.primaryBlue : const Color(0xFF64748B),
+                    color: isCurrent
+                        ? AppTheme.primaryTeal
+                        : const Color(0xFF64748B),
                   ),
                 ),
               );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../core/models/item_model.dart';
 import '../../core/constants/app_theme.dart';
 
@@ -27,7 +28,9 @@ class StatusBadge extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppTheme.syncWarningBg,
           borderRadius: BorderRadius.circular(compact ? 6 : 8),
-          border: Border.all(color: AppTheme.syncWarning.withValues(alpha: 0.5)),
+          border: Border.all(
+            color: AppTheme.syncWarning.withValues(alpha: 0.5),
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,

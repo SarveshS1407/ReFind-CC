@@ -124,87 +124,101 @@ void main() {
       );
     });
 
-    test('Finder cannot submit an ownership claim on their own reported item', () async {
-      expect(
-        () => claimService.submitClaim(
-          itemId: foundEarphones.id,
-          claimant: finder,
-          proofDescription: 'Actually this was mine all along',
-          answerToQuestion: 'I am the finder',
-        ),
-        throwsA(isA<Exception>()),
-      );
-    });
+    test(
+      'Finder cannot submit an ownership claim on their own reported item',
+      () async {
+        expect(
+          () => claimService.submitClaim(
+            itemId: foundEarphones.id,
+            claimant: finder,
+            proofDescription: 'Actually this was mine all along',
+            answerToQuestion: 'I am the finder',
+          ),
+          throwsA(isA<Exception>()),
+        );
+      },
+    );
 
-    test('Claimant can submit ownership claim with non-public verification answer', () async {
-      final claim = await claimService.submitClaim(
-        itemId: foundEarphones.id,
-        claimant: claimantA,
-        proofDescription: 'Dropped out of my backpack during morning lecture at 10 AM',
-        answerToQuestion: 'Right earbud has a small dent near the microphone mesh',
-      );
-
-      expect(claim.status, ClaimStatus.pending);
-      expect(claim.claimantId, claimantA.id);
-      expect(claim.answerToQuestion, contains('dent near the microphone'));
-    });
-
-    test('Prevent duplicate pending claims by the same claimant on the same item', () async {
-      await claimService.submitClaim(
-        itemId: foundEarphones.id,
-        claimant: claimantA,
-        proofDescription: 'First claim attempt',
-        answerToQuestion: 'Answer 1',
-      );
-
-      expect(
-        () => claimService.submitClaim(
+    test(
+      'Claimant can submit ownership claim with non-public verification answer',
+      () async {
+        final claim = await claimService.submitClaim(
           itemId: foundEarphones.id,
           claimant: claimantA,
-          proofDescription: 'Duplicate attempt',
-          answerToQuestion: 'Answer 1 duplicate',
-        ),
-        throwsA(isA<Exception>()),
-      );
-    });
+          proofDescription:
+              'Dropped out of my backpack during morning lecture at 10 AM',
+          answerToQuestion:
+              'Right earbud has a small dent near the microphone mesh',
+        );
 
-    test('Privacy Isolation: Regular students can only view their own claims', () async {
-      await claimService.submitClaim(
-        itemId: foundEarphones.id,
-        claimant: claimantA,
-        proofDescription: 'Claimant A proof',
-        answerToQuestion: 'Secret answer from A',
-      );
+        expect(claim.status, ClaimStatus.pending);
+        expect(claim.claimantId, claimantA.id);
+        expect(claim.answerToQuestion, contains('dent near the microphone'));
+      },
+    );
 
-      await claimService.submitClaim(
-        itemId: foundEarphones.id,
-        claimant: claimantB,
-        proofDescription: 'Claimant B proof',
-        answerToQuestion: 'Secret answer from B',
-      );
+    test(
+      'Prevent duplicate pending claims by the same claimant on the same item',
+      () async {
+        await claimService.submitClaim(
+          itemId: foundEarphones.id,
+          claimant: claimantA,
+          proofDescription: 'First claim attempt',
+          answerToQuestion: 'Answer 1',
+        );
 
-      // Finder sees all claims for the item
-      final finderClaims = claimService.getClaimsForItem(
-        itemId: foundEarphones.id,
-        user: finder,
-      );
-      expect(finderClaims.length, 2);
+        expect(
+          () => claimService.submitClaim(
+            itemId: foundEarphones.id,
+            claimant: claimantA,
+            proofDescription: 'Duplicate attempt',
+            answerToQuestion: 'Answer 1 duplicate',
+          ),
+          throwsA(isA<Exception>()),
+        );
+      },
+    );
 
-      // Claimant A only sees their own claim, NOT Claimant B's
-      final claimantAClaims = claimService.getClaimsForItem(
-        itemId: foundEarphones.id,
-        user: claimantA,
-      );
-      expect(claimantAClaims.length, 1);
-      expect(claimantAClaims.first.claimantId, claimantA.id);
+    test(
+      'Privacy Isolation: Regular students can only view their own claims',
+      () async {
+        await claimService.submitClaim(
+          itemId: foundEarphones.id,
+          claimant: claimantA,
+          proofDescription: 'Claimant A proof',
+          answerToQuestion: 'Secret answer from A',
+        );
 
-      // Unauthorized third party sees 0 claims
-      final intruderClaims = claimService.getClaimsForItem(
-        itemId: foundEarphones.id,
-        user: unauthorizedUser,
-      );
-      expect(intruderClaims.isEmpty, isTrue);
-    });
+        await claimService.submitClaim(
+          itemId: foundEarphones.id,
+          claimant: claimantB,
+          proofDescription: 'Claimant B proof',
+          answerToQuestion: 'Secret answer from B',
+        );
+
+        // Finder sees all claims for the item
+        final finderClaims = claimService.getClaimsForItem(
+          itemId: foundEarphones.id,
+          user: finder,
+        );
+        expect(finderClaims.length, 2);
+
+        // Claimant A only sees their own claim, NOT Claimant B's
+        final claimantAClaims = claimService.getClaimsForItem(
+          itemId: foundEarphones.id,
+          user: claimantA,
+        );
+        expect(claimantAClaims.length, 1);
+        expect(claimantAClaims.first.claimantId, claimantA.id);
+
+        // Unauthorized third party sees 0 claims
+        final intruderClaims = claimService.getClaimsForItem(
+          itemId: foundEarphones.id,
+          user: unauthorizedUser,
+        );
+        expect(intruderClaims.isEmpty, isTrue);
+      },
+    );
 
     test('Claim Approval: Only finder can approve; generates 6-digit OTP and marks item claimed', () async {
       final claimA = await claimService.submitClaim(
@@ -231,10 +245,7 @@ void main() {
       );
 
       // Finder approves Claim A
-      await claimService.approveClaim(
-        claimId: claimA.id,
-        reviewer: finder,
-      );
+      await claimService.approveClaim(claimId: claimA.id, reviewer: finder);
 
       // Item transitions to 'claimed' and has salted hash
       final updatedItem = itemService.getItemById(foundEarphones.id)!;
@@ -262,12 +273,11 @@ void main() {
         answerToQuestion: 'Answer',
       );
 
-      await claimService.approveClaim(
-        claimId: claimA.id,
-        reviewer: finder,
-      );
+      await claimService.approveClaim(claimId: claimA.id, reviewer: finder);
 
-      final approvedClaim = claimService.getMySubmittedClaims(claimantA.id).first;
+      final approvedClaim = claimService
+          .getMySubmittedClaims(claimantA.id)
+          .first;
       final handoverOtp = approvedClaim.handoverCode!;
 
       // Finder enters wrong OTP -> Fails
@@ -293,7 +303,9 @@ void main() {
       expect(returnedItem.status, ItemStatus.returned);
       expect(returnedItem.handoverCompletedAt, isNotNull);
 
-      final completedClaim = claimService.getMySubmittedClaims(claimantA.id).first;
+      final completedClaim = claimService
+          .getMySubmittedClaims(claimantA.id)
+          .first;
       expect(completedClaim.status, ClaimStatus.handedOver);
     });
   });

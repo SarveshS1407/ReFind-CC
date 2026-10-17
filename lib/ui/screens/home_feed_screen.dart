@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../core/constants/app_theme.dart';
 import '../../core/constants/categories.dart';
 import '../../core/models/item_model.dart';
@@ -7,11 +8,8 @@ import '../../providers/app_providers.dart';
 import '../widgets/item_card.dart';
 import '../widgets/offline_banner.dart';
 import '../widgets/empty_state.dart';
-import 'report_item_screen.dart';
 import 'item_details_screen.dart';
-import 'map_screen.dart';
-import 'my_activity_screen.dart';
-import 'moderation_screen.dart';
+import 'report_item_screen.dart';
 import 'auth_screen.dart';
 
 class HomeFeedScreen extends ConsumerStatefulWidget {
@@ -22,7 +20,6 @@ class HomeFeedScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeFeedScreenState extends ConsumerState<HomeFeedScreen> {
-  int _currentIndex = 0;
   final _searchController = TextEditingController();
 
   @override
@@ -33,415 +30,470 @@ class _HomeFeedScreenState extends ConsumerState<HomeFeedScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final currentUser = ref.watch(currentUserProvider);
-    final isModerator = currentUser?.isModerator ?? false;
-
-    final destinations = [
-      const NavigationDestination(
-        icon: Icon(Icons.feed_outlined),
-        selectedIcon: Icon(Icons.feed),
-        label: 'Feed',
-      ),
-      const NavigationDestination(
-        icon: Icon(Icons.map_outlined),
-        selectedIcon: Icon(Icons.map),
-        label: 'Map',
-      ),
-      const NavigationDestination(
-        icon: Icon(Icons.assignment_outlined),
-        selectedIcon: Icon(Icons.assignment),
-        label: 'Activity',
-      ),
-      if (isModerator)
-        const NavigationDestination(
-          icon: Icon(Icons.security_outlined),
-          selectedIcon: Icon(Icons.security),
-          label: 'Moderation',
-        )
-      else
-        const NavigationDestination(
-          icon: Icon(Icons.person_outline),
-          selectedIcon: Icon(Icons.person),
-          label: 'Profile',
-        ),
-    ];
-
-    Widget bodyWidget;
-    switch (_currentIndex) {
-      case 0:
-        bodyWidget = _buildFeedTab();
-        break;
-      case 1:
-        bodyWidget = const MapScreen();
-        break;
-      case 2:
-        bodyWidget = const MyActivityScreen();
-        break;
-      case 3:
-        bodyWidget = isModerator
-            ? const ModerationScreen()
-            : _buildProfileTab();
-        break;
-      default:
-        bodyWidget = _buildFeedTab();
-    }
-
-    return Scaffold(
-      body: SafeArea(child: bodyWidget),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (index) {
-          setState(() => _currentIndex = index);
-        },
-        destinations: destinations,
-      ),
-      floatingActionButton: _currentIndex == 0
-          ? FloatingActionButton.extended(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const ReportItemScreen(),
-                  ),
-                );
-              },
-              icon: const Icon(Icons.add),
-              label: const Text('Report Item'),
-            )
-          : null,
-    );
-  }
-
-  Widget _buildFeedTab() {
     final filteredItems = ref.watch(filteredItemsProvider);
     final filterState = ref.watch(itemFilterProvider);
     final isOffline = ref.watch(offlineModeProvider);
     final currentUser = ref.watch(currentUserProvider);
+    final isDesktop = AppBreakpoints.isDesktop(context);
+    final isTablet = AppBreakpoints.isTablet(context);
 
-    return Column(
-      children: [
-        // Top App Bar
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            border: Border(bottom: BorderSide(color: AppTheme.cardBorder)),
-          ),
-          child: Row(
-            children: [
+    // Quick counts for stats
+    final allItems = ref.watch(itemsListProvider);
+    final lostCount = allItems.where((i) => i.isLost).length;
+    final foundCount = allItems.where((i) => i.isFound).length;
+
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          maxWidth: AppBreakpoints.desktopContentMaxWidth,
+        ),
+        child: Column(
+          children: [
+            // Mobile App Bar Header (Only shown on mobile, desktop header is in ResponsiveMainScreen)
+            if (!isDesktop)
               Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryBlue,
-                  borderRadius: BorderRadius.circular(10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
                 ),
-                child: const Icon(Icons.travel_explore,
-                    color: Colors.white, size: 20),
-              ),
-              const SizedBox(width: 10),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  border: Border(
+                    bottom: BorderSide(color: AppTheme.cardBorder),
+                  ),
+                ),
+                child: Row(
                   children: [
-                    Text(
-                      'Finders Keepers?',
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF0F172A),
-                        letterSpacing: -0.3,
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [
+                            AppTheme.primaryTeal,
+                            AppTheme.primaryTealLight,
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.travel_explore,
+                        color: Colors.white,
+                        size: 20,
                       ),
                     ),
-                    Text(
-                      'VIT Campus Lost & Found',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Color(0xFF64748B),
-                        fontWeight: FontWeight.w500,
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Finders Keepers?',
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w800,
+                              color: AppTheme.textPrimary,
+                              letterSpacing: -0.3,
+                            ),
+                          ),
+                          Text(
+                            'VIT Campus Lost & Found',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: AppTheme.textSecondary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Offline simulation toggle
+                    IconButton(
+                      icon: Icon(
+                        isOffline ? Icons.wifi_off : Icons.wifi,
+                        color: isOffline
+                            ? AppTheme.syncWarning
+                            : AppTheme.textSecondary,
+                        size: 20,
+                      ),
+                      tooltip: isOffline ? 'Offline Active' : 'Online',
+                      onPressed: () async {
+                        await ref.read(offlineModeProvider.notifier).toggle();
+                      },
+                    ),
+
+                    // Profile Icon
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const AuthScreen()),
+                        );
+                      },
+                      child: CircleAvatar(
+                        radius: 17,
+                        backgroundColor: AppTheme.primaryTeal,
+                        child: Text(
+                          currentUser?.displayName.isNotEmpty == true
+                              ? currentUser!.displayName[0]
+                              : 'U',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                            fontSize: 13,
+                          ),
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
 
-              // Offline Simulation Mode Toggle
-              IconButton(
-                icon: Icon(
-                  isOffline ? Icons.wifi_off : Icons.wifi,
-                  color: isOffline ? AppTheme.syncWarning : Colors.grey.shade600,
-                  size: 20,
+            // Offline Sync Banner
+            const OfflineBanner(),
+
+            // Search Bar & Stats Header
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                isDesktop ? 24 : 16,
+                isDesktop ? 20 : 12,
+                isDesktop ? 24 : 16,
+                8,
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _searchController,
+                      decoration: InputDecoration(
+                        hintText: 'Search items, buildings (SJT, TT, Library), keywords...',
+                        prefixIcon: const Icon(
+                          Icons.search,
+                          size: 20,
+                          color: AppTheme.textSecondary,
+                        ),
+                        suffixIcon: _searchController.text.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear, size: 18),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  ref
+                                      .read(itemFilterProvider.notifier)
+                                      .setSearchQuery('');
+                                },
+                              )
+                            : null,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                      ),
+                      onChanged: (val) {
+                        ref
+                            .read(itemFilterProvider.notifier)
+                            .setSearchQuery(val);
+                      },
+                    ),
+                  ),
+                  if (isDesktop) ...[
+                    const SizedBox(width: 16),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const ReportItemScreen(),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.add, size: 18),
+                      label: const Text('Report New Item'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 14,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+
+            // Quick Type Selector Tabs: All, Lost Items, Found Items
+            Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: isDesktop ? 24 : 16,
+                vertical: 6,
+              ),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _buildTypeTab(
+                      label: 'All Items',
+                      count: allItems.length,
+                      isSelected:
+                          filterState.typeFilter == null &&
+                          filterState.statusFilter == null,
+                      onTap: () {
+                        ref.read(itemFilterProvider.notifier).resetFilters();
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    _buildTypeTab(
+                      label: 'Lost Items',
+                      count: lostCount,
+                      color: AppTheme.statusLost,
+                      isSelected: filterState.typeFilter == ItemType.lost,
+                      onTap: () {
+                        ref
+                            .read(itemFilterProvider.notifier)
+                            .setTypeFilter(
+                              filterState.typeFilter == ItemType.lost
+                                  ? null
+                                  : ItemType.lost,
+                            );
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    _buildTypeTab(
+                      label: 'Found Items',
+                      count: foundCount,
+                      color: AppTheme.statusFound,
+                      isSelected: filterState.typeFilter == ItemType.found,
+                      onTap: () {
+                        ref
+                            .read(itemFilterProvider.notifier)
+                            .setTypeFilter(
+                              filterState.typeFilter == ItemType.found
+                                  ? null
+                                  : ItemType.found,
+                            );
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    _buildTypeTab(
+                      label: 'Claimed',
+                      color: AppTheme.statusClaimed,
+                      isSelected:
+                          filterState.statusFilter == ItemStatus.claimed,
+                      onTap: () {
+                        ref
+                            .read(itemFilterProvider.notifier)
+                            .setStatusFilter(
+                              filterState.statusFilter == ItemStatus.claimed
+                                  ? null
+                                  : ItemStatus.claimed,
+                            );
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    _buildTypeTab(
+                      label: 'Returned',
+                      color: AppTheme.statusReturned,
+                      isSelected:
+                          filterState.statusFilter == ItemStatus.returned,
+                      onTap: () {
+                        ref
+                            .read(itemFilterProvider.notifier)
+                            .setStatusFilter(
+                              filterState.statusFilter == ItemStatus.returned
+                                  ? null
+                                  : ItemStatus.returned,
+                            );
+                      },
+                    ),
+                  ],
                 ),
-                tooltip: isOffline
-                    ? 'Offline Simulation Active (Tap to disable)'
-                    : 'Simulate Offline Mode (Tap to test outbox)',
-                onPressed: () async {
-                  await ref.read(offlineModeProvider.notifier).toggle();
-                  if (mounted) {
-                    final active = ref.read(offlineModeProvider);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(active
-                            ? 'Offline simulation enabled. Submissions will queue locally.'
-                            : 'Offline simulation disabled. Reconnected to live network.'),
-                        duration: const Duration(seconds: 2),
+              ),
+            ),
+
+            // Categories Filter Scroll
+            SizedBox(
+              height: 42,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: EdgeInsets.symmetric(horizontal: isDesktop ? 24 : 16),
+                itemCount: CategoryConstants.allCategories.length + 1,
+                itemBuilder: (context, index) {
+                  if (index == 0) {
+                    final isSelected = filterState.categoryFilter == 'all';
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: FilterChip(
+                        label: const Text('All Categories'),
+                        selected: isSelected,
+                        selectedColor: AppTheme.primaryTeal.withValues(
+                          alpha: 0.12,
+                        ),
+                        checkmarkColor: AppTheme.primaryTeal,
+                        labelStyle: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: isSelected
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                          color: isSelected
+                              ? AppTheme.primaryTeal
+                              : AppTheme.textSecondary,
+                        ),
+                        onSelected: (_) => ref
+                            .read(itemFilterProvider.notifier)
+                            .setCategoryFilter('all'),
                       ),
                     );
                   }
-                },
-              ),
-
-              // User Profile Avatar / Switcher
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const AuthScreen()),
+                  final cat = CategoryConstants.allCategories[index - 1];
+                  final isSelected = filterState.categoryFilter == cat.id;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: FilterChip(
+                      avatar: Icon(
+                        cat.icon,
+                        size: 14,
+                        color: isSelected
+                            ? AppTheme.primaryTeal
+                            : AppTheme.textSecondary,
+                      ),
+                      label: Text(cat.name),
+                      selected: isSelected,
+                      selectedColor: AppTheme.primaryTeal.withValues(
+                        alpha: 0.12,
+                      ),
+                      checkmarkColor: AppTheme.primaryTeal,
+                      labelStyle: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: isSelected
+                            ? FontWeight.w700
+                            : FontWeight.w500,
+                        color: isSelected
+                            ? AppTheme.primaryTeal
+                            : AppTheme.textSecondary,
+                      ),
+                      onSelected: (_) => ref
+                          .read(itemFilterProvider.notifier)
+                          .setCategoryFilter(isSelected ? 'all' : cat.id),
+                    ),
                   );
                 },
-                child: CircleAvatar(
-                  radius: 18,
-                  backgroundColor: AppTheme.primaryBlue.withValues(alpha: 0.1),
-                  child: Text(
-                    currentUser?.displayName.isNotEmpty == true
-                        ? currentUser!.displayName[0]
-                        : 'U',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      color: AppTheme.primaryBlue,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
               ),
-            ],
-          ),
-        ),
-
-        // Offline Banner
-        const OfflineBanner(),
-
-        // Search Bar
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-          child: TextField(
-            controller: _searchController,
-            decoration: InputDecoration(
-              hintText: 'Search items, buildings, keywords...',
-              prefixIcon: const Icon(Icons.search, size: 20),
-              suffixIcon: _searchController.text.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear, size: 18),
-                      onPressed: () {
-                        _searchController.clear();
-                        ref
-                            .read(itemFilterProvider.notifier)
-                            .setSearchQuery('');
-                      },
-                    )
-                  : null,
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             ),
-            onChanged: (val) {
-              ref.read(itemFilterProvider.notifier).setSearchQuery(val);
-            },
-          ),
-        ),
+            const SizedBox(height: 6),
 
-        // Filter Chips (Type Filter)
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            children: [
-              _buildTypeChip('All Items', null, filterState.typeFilter == null),
-              const SizedBox(width: 8),
-              _buildTypeChip('Lost Items', ItemType.lost,
-                  filterState.typeFilter == ItemType.lost),
-              const SizedBox(width: 8),
-              _buildTypeChip('Found Items', ItemType.found,
-                  filterState.typeFilter == ItemType.found),
-              const SizedBox(width: 8),
-              _buildStatusChip('Claimed', ItemStatus.claimed,
-                  filterState.statusFilter == ItemStatus.claimed),
-              const SizedBox(width: 8),
-              _buildStatusChip('Returned', ItemStatus.returned,
-                  filterState.statusFilter == ItemStatus.returned),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
-
-        // Categories Scroll
-        SizedBox(
-          height: 38,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: CategoryConstants.allCategories.length + 1,
-            itemBuilder: (context, index) {
-              if (index == 0) {
-                final isSelected = filterState.categoryFilter == 'all';
-                return Padding(
-                  padding: const EdgeInsets.only(right: 6),
-                  child: FilterChip(
-                    label: const Text('All Categories'),
-                    selected: isSelected,
-                    onSelected: (_) => ref
-                        .read(itemFilterProvider.notifier)
-                        .setCategoryFilter('all'),
-                  ),
-                );
-              }
-              final cat = CategoryConstants.allCategories[index - 1];
-              final isSelected = filterState.categoryFilter == cat.id;
-              return Padding(
-                padding: const EdgeInsets.only(right: 6),
-                child: FilterChip(
-                  avatar: Icon(cat.icon, size: 14),
-                  label: Text(cat.name),
-                  selected: isSelected,
-                  onSelected: (_) => ref
-                      .read(itemFilterProvider.notifier)
-                      .setCategoryFilter(isSelected ? 'all' : cat.id),
-                ),
-              );
-            },
-          ),
-        ),
-        const SizedBox(height: 8),
-
-        // Feed List
-        Expanded(
-          child: RefreshIndicator(
-            onRefresh: () async {
-              ref.read(itemsListProvider.notifier).refresh();
-            },
-            child: filteredItems.isEmpty
-                ? const EmptyState(
-                    icon: Icons.search_off,
-                    title: 'No Matching Items Found',
-                    message:
-                        'Try clearing filters or search with a different keyword.',
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: filteredItems.length,
-                    itemBuilder: (context, index) {
-                      final item = filteredItems[index];
-                      return ItemCard(
-                        item: item,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => ItemDetailsScreen(item: item),
-                            ),
+            // Item Feed (Responsive Grid on Desktop / Tablet, List on Mobile)
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: () async {
+                  ref.read(itemsListProvider.notifier).refresh();
+                },
+                child: filteredItems.isEmpty
+                    ? const EmptyState(
+                        icon: Icons.search_off,
+                        title: 'No Matching Items Found',
+                        message: 'Try clearing active filters or searching for different keywords.',
+                      )
+                    : isDesktop || isTablet
+                    ? GridView.builder(
+                        padding: EdgeInsets.all(isDesktop ? 24 : 16),
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: isDesktop ? 3 : 2,
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 16,
+                          mainAxisExtent: 245,
+                        ),
+                        itemCount: filteredItems.length,
+                        itemBuilder: (context, index) {
+                          final item = filteredItems[index];
+                          return ItemCard(
+                            item: item,
+                            onTap: () => _openItemDetails(item),
                           );
                         },
-                      );
-                    },
-                  ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: filteredItems.length,
+                        itemBuilder: (context, index) {
+                          final item = filteredItems[index];
+                          return ItemCard(
+                            item: item,
+                            onTap: () => _openItemDetails(item),
+                          );
+                        },
+                      ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _openItemDetails(ItemModel item) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => ItemDetailsScreen(item: item)),
+    );
+  }
+
+  Widget _buildTypeTab({
+    required String label,
+    int? count,
+    Color? color,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    final effectiveColor = color ?? AppTheme.primaryTeal;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? effectiveColor.withValues(alpha: 0.12)
+              : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? effectiveColor : AppTheme.cardBorder,
+            width: isSelected ? 1.5 : 1.0,
           ),
         ),
-      ],
-    );
-  }
-
-  Widget _buildTypeChip(String label, ItemType? type, bool isSelected) {
-    return ChoiceChip(
-      label: Text(label),
-      selected: isSelected,
-      onSelected: (_) {
-        ref.read(itemFilterProvider.notifier).setTypeFilter(type);
-      },
-    );
-  }
-
-  Widget _buildStatusChip(String label, ItemStatus status, bool isSelected) {
-    return ChoiceChip(
-      label: Text(label),
-      selected: isSelected,
-      onSelected: (_) {
-        ref.read(itemFilterProvider.notifier).setStatusFilter(
-              isSelected ? null : status,
-            );
-      },
-    );
-  }
-
-  Widget _buildProfileTab() {
-    final currentUser = ref.watch(currentUserProvider);
-
-    return ListView(
-      padding: const EdgeInsets.all(24),
-      children: [
-        Center(
-          child: Column(
-            children: [
-              CircleAvatar(
-                radius: 40,
-                backgroundColor: AppTheme.primaryBlue,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: isSelected ? effectiveColor : AppTheme.textSecondary,
+              ),
+            ),
+            if (count != null) ...[
+              const SizedBox(width: 5),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                decoration: BoxDecoration(
+                  color: isSelected ? effectiveColor : Colors.grey.shade200,
+                  borderRadius: BorderRadius.circular(10),
+                ),
                 child: Text(
-                  currentUser?.displayName.isNotEmpty == true
-                      ? currentUser!.displayName[0]
-                      : 'U',
-                  style: const TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                  '$count',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: isSelected ? Colors.white : AppTheme.textSecondary,
                   ),
                 ),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                currentUser?.displayName ?? 'Guest User',
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF0F172A),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Reg No: ${currentUser?.studentId ?? "N/A"} • Role: ${currentUser?.role.toUpperCase() ?? "STUDENT"}',
-                style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                currentUser?.email ?? '',
-                style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
               ),
             ],
-          ),
+          ],
         ),
-        const SizedBox(height: 32),
-        ElevatedButton.icon(
-          icon: const Icon(Icons.swap_horiz),
-          label: const Text('Switch Demo Profile (Evaluator Quick-Access)'),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const AuthScreen()),
-            );
-          },
-        ),
-        const SizedBox(height: 12),
-        OutlinedButton.icon(
-          icon: const Icon(Icons.logout),
-          label: const Text('Sign Out'),
-          onPressed: () async {
-            await ref.read(currentUserProvider.notifier).signOut();
-            if (mounted) {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (_) => const AuthScreen()),
-              );
-            }
-          },
-        ),
-      ],
+      ),
     );
   }
 }

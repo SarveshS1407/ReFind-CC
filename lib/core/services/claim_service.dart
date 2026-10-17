@@ -1,4 +1,5 @@
 import 'package:uuid/uuid.dart';
+
 import '../models/claim_model.dart';
 import '../models/item_model.dart';
 import '../models/user_model.dart';
@@ -35,7 +36,9 @@ class ClaimService {
     }
 
     if (item.reporterId == claimant.id) {
-      throw Exception('You cannot submit an ownership claim on your own reported item.');
+      throw Exception(
+        'You cannot submit an ownership claim on your own reported item.',
+      );
     }
 
     // Check if claimant already has a pending claim on this item
@@ -43,7 +46,9 @@ class ClaimService {
       (c) => c.itemId == itemId && c.claimantId == claimant.id && c.isPending,
     );
     if (existing.isNotEmpty) {
-      throw Exception('You already have a pending verification claim on this item.');
+      throw Exception(
+        'You already have a pending verification claim on this item.',
+      );
     }
 
     final now = DateTime.now();
@@ -115,7 +120,9 @@ class ClaimService {
 
     // Enforce authorization
     if (item.reporterId != reviewer.id && !reviewer.isModerator) {
-      throw Exception('Unauthorized: Only the item finder or a moderator can approve this claim.');
+      throw Exception(
+        'Unauthorized: Only the item finder or a moderator can approve this claim.',
+      );
     }
 
     final now = DateTime.now();
@@ -148,7 +155,8 @@ class ClaimService {
           _claims[i].isPending) {
         _claims[i] = _claims[i].copyWith(
           status: ClaimStatus.rejected,
-          rejectionReason: 'Another student submitted a verified ownership match.',
+          rejectionReason:
+              'Another student submitted a verified ownership match.',
           updatedAt: now,
         );
       }
@@ -171,7 +179,9 @@ class ClaimService {
     if (item == null) throw Exception('Associated item not found.');
 
     if (item.reporterId != reviewer.id && !reviewer.isModerator) {
-      throw Exception('Unauthorized: Only the item reporter or a moderator can reject claims.');
+      throw Exception(
+        'Unauthorized: Only the item reporter or a moderator can reject claims.',
+      );
     }
 
     final now = DateTime.now();
@@ -196,11 +206,15 @@ class ClaimService {
     if (item == null) throw Exception('Item not found.');
 
     if (item.reporterId != reviewer.id && !reviewer.isModerator) {
-      throw Exception('Unauthorized: Only the item finder or a moderator can verify handover.');
+      throw Exception(
+        'Unauthorized: Only the item finder or a moderator can verify handover.',
+      );
     }
 
     if (item.status != ItemStatus.claimed || item.handoverCodeHash == null) {
-      throw Exception('Item is not in a claimed state awaiting handover verification.');
+      throw Exception(
+        'Item is not in a claimed state awaiting handover verification.',
+      );
     }
 
     // Verify OTP against salted hash

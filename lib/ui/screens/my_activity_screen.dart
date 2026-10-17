@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../core/constants/app_theme.dart';
 import '../../core/models/claim_model.dart';
 import '../../core/models/item_model.dart';
@@ -38,8 +39,8 @@ class MyActivityScreen extends ConsumerWidget {
         appBar: AppBar(
           title: const Text('My Activity'),
           bottom: TabBar(
-            labelColor: AppTheme.primaryBlue,
-            indicatorColor: AppTheme.primaryBlue,
+            labelColor: AppTheme.primaryTeal,
+            indicatorColor: AppTheme.primaryTeal,
             tabs: [
               Tab(text: 'Reports (${myReportedItems.length})'),
               Tab(text: 'Claims (${mySubmittedClaims.length})'),
@@ -54,8 +55,7 @@ class MyActivityScreen extends ConsumerWidget {
                 ? const EmptyState(
                     icon: Icons.campaign_outlined,
                     title: 'No Items Reported Yet',
-                    message:
-                        'Items you report as lost or found around campus will be listed here.',
+                    message: 'Items you report as lost or found around campus will be listed here.',
                   )
                 : ListView.builder(
                     padding: const EdgeInsets.all(16),
@@ -81,8 +81,7 @@ class MyActivityScreen extends ConsumerWidget {
                 ? const EmptyState(
                     icon: Icons.assignment_outlined,
                     title: 'No Claims Submitted',
-                    message:
-                        'When you claim a found item, your submission and handover OTP will appear here.',
+                    message: 'When you claim a found item, your submission and handover OTP will appear here.',
                   )
                 : ListView.builder(
                     padding: const EdgeInsets.all(16),
@@ -169,8 +168,7 @@ class MyActivityScreen extends ConsumerWidget {
                 ? const EmptyState(
                     icon: Icons.cloud_done_outlined,
                     title: 'Outbox is Clear',
-                    message:
-                        'All reports and state changes are confirmed and synced with the server.',
+                    message: 'All reports and state changes are confirmed and synced with the server.',
                   )
                 : ListView(
                     padding: const EdgeInsets.all(16),
@@ -252,7 +250,11 @@ class MyActivityScreen extends ConsumerWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: text),
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: text,
+        ),
       ),
     );
   }

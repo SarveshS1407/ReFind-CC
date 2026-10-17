@@ -1,4 +1,5 @@
 import 'package:uuid/uuid.dart';
+
 import '../models/item_model.dart';
 import '../models/sync_task.dart';
 import '../utils/formatters.dart';
@@ -74,8 +75,7 @@ class ItemService {
       }
 
       return true;
-    }).toList()
-      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    }).toList()..sort((a, b) => b.createdAt.compareTo(a.createdAt));
   }
 
   /// Submits a newly reported lost or found item.
@@ -175,11 +175,13 @@ class ItemService {
         }
         syncedCount++;
       } catch (e) {
-        remainingTasks.add(task.copyWith(
-          retryCount: task.retryCount + 1,
-          lastError: e.toString(),
-          status: SyncTaskStatus.failed,
-        ));
+        remainingTasks.add(
+          task.copyWith(
+            retryCount: task.retryCount + 1,
+            lastError: e.toString(),
+            status: SyncTaskStatus.failed,
+          ),
+        );
       }
     }
 
@@ -190,8 +192,7 @@ class ItemService {
 
   /// Recommendations engine: Finds counterpart items that match by category, keyword similarity, and distance
   List<ItemMatchRecommendation> findPotentialMatches(ItemModel target) {
-    final counterpartType =
-        target.isLost ? ItemType.found : ItemType.lost;
+    final counterpartType = target.isLost ? ItemType.found : ItemType.lost;
     final candidates = _items
         .where((i) => i.type == counterpartType && i.id != target.id)
         .toList();
@@ -237,7 +238,9 @@ class ItemService {
       }
     }
 
-    recommendations.sort((a, b) => b.confidenceScore.compareTo(a.confidenceScore));
+    recommendations.sort(
+      (a, b) => b.confidenceScore.compareTo(a.confidenceScore),
+    );
     return recommendations;
   }
 
@@ -247,7 +250,9 @@ class ItemService {
       reasons.add('Same category');
     }
     if (distance < 300) {
-      reasons.add('Found within ${distance.round()}m (${b.campusLocationName})');
+      reasons.add(
+        'Found within ${distance.round()}m (${b.campusLocationName})',
+      );
     }
     return reasons.join(' • ');
   }
@@ -259,8 +264,7 @@ class ItemService {
       ItemModel(
         id: 'itm_01',
         title: 'Apple AirPods Pro (2nd Gen) in White Case',
-        description:
-            'Found an AirPods Pro 2 case near the Food Mall outdoor gazebo table. Has a slight scratch on the hinge and a blue silicone lanyard attached.',
+        description: 'Found an AirPods Pro 2 case near the Food Mall outdoor gazebo table. Has a slight scratch on the hinge and a blue silicone lanyard attached.',
         category: 'audio',
         type: ItemType.found,
         status: ItemStatus.found,
@@ -273,16 +277,14 @@ class ItemService {
         reporterName: 'Diya Patel',
         reporterContact: 'diya.patel2023@vitstudent.ac.in',
         dateReported: now.subtract(const Duration(hours: 3)),
-        verificationQuestion:
-            'What custom initials or engraving is on the back, or what exact color is the inner lanyard loop?',
+        verificationQuestion: 'What custom initials or engraving is on the back, or what exact color is the inner lanyard loop?',
         createdAt: now.subtract(const Duration(hours: 3)),
         updatedAt: now.subtract(const Duration(hours: 3)),
       ),
       ItemModel(
         id: 'itm_02',
         title: 'VIT Student ID Card & Library RFID Badge',
-        description:
-            'Lost my student ID card with lanyard somewhere between SJT 6th floor lab and TT ground floor. Need it urgently for upcoming lab exams!',
+        description: 'Lost my student ID card with lanyard somewhere between SJT 6th floor lab and TT ground floor. Need it urgently for upcoming lab exams!',
         category: 'id_cards',
         type: ItemType.lost,
         status: ItemStatus.lost,
@@ -302,8 +304,7 @@ class ItemService {
       ItemModel(
         id: 'itm_03',
         title: 'Set of 3 Keys on Spider-Man Metal Keychain',
-        description:
-            'Found 3 silver keys on a Spider-Man metal ring on a bench in front of Technology Tower (TT). One key has a yellow tape wrap.',
+        description: 'Found 3 silver keys on a Spider-Man metal ring on a bench in front of Technology Tower (TT). One key has a yellow tape wrap.',
         category: 'keys',
         type: ItemType.found,
         status: ItemStatus.found,
@@ -324,8 +325,7 @@ class ItemService {
       ItemModel(
         id: 'itm_04',
         title: 'Casio fx-991CW ClassWiz Scientific Calculator',
-        description:
-            'Left behind my calculator in Central Library 2nd floor silent study room. Black color with my name written in pencil inside the slide-on cover.',
+        description: 'Left behind my calculator in Central Library 2nd floor silent study room. Black color with my name written in pencil inside the slide-on cover.',
         category: 'books_notes',
         type: ItemType.lost,
         status: ItemStatus.lost,
@@ -345,8 +345,7 @@ class ItemService {
       ItemModel(
         id: 'itm_05',
         title: 'Brown Leather Bi-Fold Wallet',
-        description:
-            'Found a brown Tommy Hilfiger wallet near the outdoor stadium basketball court bleachers. Safely deposited at security desk.',
+        description: 'Found a brown Tommy Hilfiger wallet near the outdoor stadium basketball court bleachers. Safely deposited at security desk.',
         category: 'wallets',
         type: ItemType.found,
         status: ItemStatus.found,
@@ -359,8 +358,7 @@ class ItemService {
         reporterName: 'Prof. R. Verma (Campus Security)',
         reporterContact: 'security.warden@vit.ac.in',
         dateReported: now.subtract(const Duration(days: 2)),
-        verificationQuestion:
-            'State the name on any debit card or describe the currency bills inside.',
+        verificationQuestion: 'State the name on any debit card or describe the currency bills inside.',
         createdAt: now.subtract(const Duration(days: 2)),
         updatedAt: now.subtract(const Duration(days: 2)),
       ),

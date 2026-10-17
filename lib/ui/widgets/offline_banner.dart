@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../core/constants/app_theme.dart';
 import '../../providers/app_providers.dart';
 
@@ -17,34 +18,40 @@ class OfflineBanner extends ConsumerWidget {
 
     return Container(
       width: double.infinity,
-      color: isOffline ? AppTheme.syncWarningBg : Colors.blue.shade50,
+      color: isOffline
+          ? AppTheme.syncWarningBg
+          : AppTheme.primaryTeal.withValues(alpha: 0.1),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
           Icon(
             isOffline ? Icons.wifi_off : Icons.cloud_queue,
             size: 18,
-            color: isOffline ? AppTheme.syncWarning : AppTheme.primaryBlue,
+            color: isOffline ? AppTheme.syncWarning : AppTheme.primaryTeal,
           ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               isOffline
                   ? (outboxCount > 0
-                      ? 'Offline Mode Active • $outboxCount submissions queued locally'
-                      : 'Offline Simulation Active (Submissions saved locally)')
+                        ? 'Offline Mode Active • $outboxCount submissions queued locally'
+                        : 'Offline Simulation Active (Submissions saved locally)')
                   : '$outboxCount items ready to sync to server',
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: isOffline ? const Color(0xFF92400E) : AppTheme.primaryBlue,
+                color: isOffline
+                    ? const Color(0xFF92400E)
+                    : AppTheme.primaryTeal,
               ),
             ),
           ),
           if (outboxCount > 0 && !isOffline)
             TextButton(
               onPressed: () async {
-                final count = await ref.read(itemsListProvider.notifier).syncOfflineQueue();
+                final count = await ref
+                    .read(itemsListProvider.notifier)
+                    .syncOfflineQueue();
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -55,7 +62,10 @@ class OfflineBanner extends ConsumerWidget {
                 }
               },
               style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 minimumSize: Size.zero,
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
@@ -64,7 +74,7 @@ class OfflineBanner extends ConsumerWidget {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
-                  color: AppTheme.primaryBlue,
+                  color: AppTheme.primaryTeal,
                 ),
               ),
             ),

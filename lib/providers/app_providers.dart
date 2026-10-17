@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../core/models/user_model.dart';
 import '../core/models/item_model.dart';
 import '../core/models/claim_model.dart';
@@ -36,10 +37,9 @@ class CurrentUserNotifier extends Notifier<AppUser?> {
   }
 
   Future<void> signIn(String email, String password) async {
-    final user = await ref.read(authServiceProvider).signInWithEmail(
-          email: email,
-          password: password,
-        );
+    final user = await ref
+        .read(authServiceProvider)
+        .signInWithEmail(email: email, password: password);
     state = user;
   }
 
@@ -49,7 +49,9 @@ class CurrentUserNotifier extends Notifier<AppUser?> {
     String studentId,
     String? phone,
   ) async {
-    final user = await ref.read(authServiceProvider).registerStudent(
+    final user = await ref
+        .read(authServiceProvider)
+        .registerStudent(
           name: name,
           email: email,
           studentId: studentId,
@@ -67,10 +69,15 @@ class CurrentUserNotifier extends Notifier<AppUser?> {
     await ref.read(authServiceProvider).signOut();
     state = null;
   }
+
+  Future<void> sendPasswordReset(String email) async {
+    await ref.read(authServiceProvider).sendPasswordResetEmail(email);
+  }
 }
 
-final currentUserProvider =
-    NotifierProvider<CurrentUserNotifier, AppUser?>(CurrentUserNotifier.new);
+final currentUserProvider = NotifierProvider<CurrentUserNotifier, AppUser?>(
+  CurrentUserNotifier.new,
+);
 
 // Offline Mode Notifier
 class OfflineModeNotifier extends Notifier<bool> {
@@ -87,8 +94,9 @@ class OfflineModeNotifier extends Notifier<bool> {
   }
 }
 
-final offlineModeProvider =
-    NotifierProvider<OfflineModeNotifier, bool>(OfflineModeNotifier.new);
+final offlineModeProvider = NotifierProvider<OfflineModeNotifier, bool>(
+  OfflineModeNotifier.new,
+);
 
 // Outbox Count Provider
 final outboxCountProvider = Provider<int>((ref) {
@@ -149,7 +157,9 @@ class ItemFilterNotifier extends Notifier<ItemFilterState> {
 }
 
 final itemFilterProvider =
-    NotifierProvider<ItemFilterNotifier, ItemFilterState>(ItemFilterNotifier.new);
+    NotifierProvider<ItemFilterNotifier, ItemFilterState>(
+      ItemFilterNotifier.new,
+    );
 
 // Items List Notifier
 class ItemsListNotifier extends Notifier<List<ItemModel>> {
@@ -180,7 +190,9 @@ class ItemsListNotifier extends Notifier<List<ItemModel>> {
     String? verificationQuestion,
     String? secretAnswerHash,
   }) async {
-    final newItem = await ref.read(itemServiceProvider).reportItem(
+    final newItem = await ref
+        .read(itemServiceProvider)
+        .reportItem(
           title: title,
           description: description,
           category: category,
@@ -209,8 +221,9 @@ class ItemsListNotifier extends Notifier<List<ItemModel>> {
   }
 }
 
-final itemsListProvider =
-    NotifierProvider<ItemsListNotifier, List<ItemModel>>(ItemsListNotifier.new);
+final itemsListProvider = NotifierProvider<ItemsListNotifier, List<ItemModel>>(
+  ItemsListNotifier.new,
+);
 
 // Filtered Items Computed Provider
 final filteredItemsProvider = Provider<List<ItemModel>>((ref) {
@@ -271,7 +284,9 @@ class ClaimsNotifier extends Notifier<List<ClaimModel>> {
     required String answerToQuestion,
     String? proofImageUrl,
   }) async {
-    final claim = await ref.read(claimServiceProvider).submitClaim(
+    final claim = await ref
+        .read(claimServiceProvider)
+        .submitClaim(
           itemId: itemId,
           claimant: claimant,
           proofDescription: proofDescription,
@@ -287,10 +302,9 @@ class ClaimsNotifier extends Notifier<List<ClaimModel>> {
     required String claimId,
     required AppUser reviewer,
   }) async {
-    await ref.read(claimServiceProvider).approveClaim(
-          claimId: claimId,
-          reviewer: reviewer,
-        );
+    await ref
+        .read(claimServiceProvider)
+        .approveClaim(claimId: claimId, reviewer: reviewer);
     state = ref.read(claimServiceProvider).allClaims;
     ref.read(itemsListProvider.notifier).refresh();
   }
@@ -300,11 +314,9 @@ class ClaimsNotifier extends Notifier<List<ClaimModel>> {
     required AppUser reviewer,
     required String reason,
   }) async {
-    await ref.read(claimServiceProvider).rejectClaim(
-          claimId: claimId,
-          reviewer: reviewer,
-          reason: reason,
-        );
+    await ref
+        .read(claimServiceProvider)
+        .rejectClaim(claimId: claimId, reviewer: reviewer, reason: reason);
     state = ref.read(claimServiceProvider).allClaims;
     ref.read(itemsListProvider.notifier).refresh();
   }
@@ -314,7 +326,9 @@ class ClaimsNotifier extends Notifier<List<ClaimModel>> {
     required String enteredOtp,
     required AppUser reviewer,
   }) async {
-    final result = await ref.read(claimServiceProvider).verifyAndCompleteHandover(
+    final result = await ref
+        .read(claimServiceProvider)
+        .verifyAndCompleteHandover(
           itemId: itemId,
           enteredOtp: enteredOtp,
           reviewer: reviewer,
@@ -325,5 +339,6 @@ class ClaimsNotifier extends Notifier<List<ClaimModel>> {
   }
 }
 
-final claimsProvider =
-    NotifierProvider<ClaimsNotifier, List<ClaimModel>>(ClaimsNotifier.new);
+final claimsProvider = NotifierProvider<ClaimsNotifier, List<ClaimModel>>(
+  ClaimsNotifier.new,
+);

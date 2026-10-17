@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../core/constants/app_theme.dart';
 import '../../core/constants/campus_locations.dart';
 import '../../core/models/item_model.dart';
@@ -152,8 +153,11 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.privacy_tip_outlined,
-                      size: 16, color: AppTheme.primaryBlue),
+                  const Icon(
+                    Icons.privacy_tip_outlined,
+                    size: 16,
+                    color: AppTheme.primaryTeal,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -191,7 +195,10 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                         children: [
                           StatusBadge(type: _selectedItem!.type, compact: true),
                           const SizedBox(width: 8),
-                          StatusBadge(status: _selectedItem!.status, compact: true),
+                          StatusBadge(
+                            status: _selectedItem!.status,
+                            compact: true,
+                          ),
                           const Spacer(),
                           IconButton(
                             icon: const Icon(Icons.close, size: 18),
@@ -219,8 +226,11 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          const Icon(Icons.location_on,
-                              size: 14, color: AppTheme.primaryBlue),
+                          const Icon(
+                            Icons.location_on,
+                            size: 14,
+                            color: AppTheme.primaryTeal,
+                          ),
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(

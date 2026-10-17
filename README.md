@@ -4,39 +4,47 @@
 [![Flutter](https://img.shields.io/badge/Flutter-3.47.7-02569B?logo=flutter)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-3.13.5-0175C2?logo=dart)](https://dart.dev)
 [![Riverpod](https://img.shields.io/badge/State-Riverpod%203-blue)](https://riverpod.dev)
-[![Tests](https://img.shields.io/badge/Tests-17%20Passed%20(100%25)-brightgreen)](file:///Users/kingpin/Documents/CC-Appdev/test)
-[![Analysis](https://img.shields.io/badge/Static%20Analysis-0%20Issues-brightgreen)](file:///Users/kingpin/Documents/CC-Appdev)
+[![Tests](https://img.shields.io/badge/Tests-18%20Passed%20(100%25)-brightgreen)](file:///Users/kingpin/Documents/CC-Appdev/test)
+[![Static Analysis](https://img.shields.io/badge/Static%20Analysis-0%20Issues-brightgreen)](file:///Users/kingpin/Documents/CC-Appdev)
+[![Deployment](https://img.shields.io/badge/Deployment-Vercel%20Ready-black?logo=vercel)](file:///Users/kingpin/Documents/CC-Appdev/vercel.json)
 [![License](https://img.shields.io/badge/License-MIT-orange)](#license)
 
 ---
 
 ## 📌 Executive Summary
 
-**Finders Keepers?** is a production-grade, offline-first mobile application designed to solve the campus lost-and-found coordination problem across universities like **VIT Vellore**.
+**Finders Keepers?** is a production-grade, responsive (mobile & desktop), offline-first application designed to solve the campus lost-and-found coordination problem across universities like **VIT Vellore**.
 
-When items are lost or found in crowded campus hubs (SJT, Technology Tower, Central Library, Food Mall, Men's & Ladies' Hostels), conventional WhatsApp and noticeboard announcements cause chaos: fake claims, public spam, exposed personal numbers, and unverified handovers.
+When items are lost or found in crowded campus hubs (SJT, Technology Tower, Central Library, Food Mall, Men's & Ladies' Hostels), conventional WhatsApp groups and noticeboard announcements cause chaos: fake claims, public spam, exposed personal numbers, and unverified handovers.
 
 **Finders Keepers?** eliminates these issues through:
-1. **Zero-Knowledge 3-Tier Ownership Verification**: Finders pose non-public challenge questions. Claimants submit proof and challenge answers stored in strictly isolated subcollections that are never exposed in public feeds.
-2. **Cryptographically Salted SHA-256 Handover OTP**: Physical handovers are verified via a dynamic 6-digit one-time token visible only to the verified claimant. The database stores only a salted hash (`salt:itemId`), preventing unauthorized token forgery or snooping.
-3. **Approximate Campus Geofencing**: Public listings show landmark names and approximate coordinates (protecting exact GPS lockers or desk positions).
-4. **Resilient Offline-First Architecture**: Interrupted submissions are autosaved as drafts; network drops enqueue changes into a persistent local outbox with auto-retry and deduplication upon reconnection.
-5. **Role-Based Access Control (RBAC)**: Comprehensive security rules for Students, Finders, and Campus Moderators.
+1. **Authentication-First Entry & Evaluator Demonstration Mode**: Secure `AuthGate` routing presenting an attractive branded Welcome screen, Sign In / Register tabs, password reset flow, and one-tap Evaluator Demonstration Personas.
+2. **Dedicated Campus Help Center & User Guide**: 10 structured sections with instant real-time search, expandable accordions, campus security guidance, accessible both before and after signing in.
+3. **Zero-Knowledge 3-Tier Ownership Verification**: Finders pose non-public challenge questions. Claimants submit proof and challenge answers stored in strictly isolated subcollections that are never exposed in public feeds.
+4. **Cryptographically Salted SHA-256 Handover OTP**: Physical handovers are verified via a dynamic 6-digit one-time token visible only to the verified claimant. The database stores only a salted hash (`salt:itemId:otp`), preventing token forgery or snooping.
+5. **Adaptive Responsive Layout**: Seamless UX across Mobile (<640px), Tablet (640–1024px), and Desktop (>=1024px) with adaptive top/bottom navigation and responsive grid layouts.
+6. **Approximate Campus Geofencing**: Public listings show landmark names and approximate coordinates (protecting exact GPS lockers or desk positions).
+7. **Resilient Offline-First Architecture**: Interrupted submissions are autosaved as drafts; network drops enqueue changes into a persistent local outbox with auto-retry and deduplication upon reconnection.
+8. **Vercel Production Deployment**: Fully configured with `vercel.json` SPA rewrites, static caching headers, and `.env.example`.
 
 ---
 
 ## 🏗️ System Architecture
 
-The application adopts a **Layered Architecture** powered by **Riverpod 3** `Notifier` / `NotifierProvider` reactive state management:
+The application adopts a **Clean Layered Architecture** powered by **Riverpod 3** `Notifier` / `NotifierProvider` reactive state management:
 
 ```mermaid
 flowchart TD
-    subgraph UI_Layer ["📱 Presentation Layer (Flutter UI)"]
-        HomeFeed["Home Feed Screen (Search & Filter)"]
+    subgraph UI_Layer ["📱 Presentation & Responsive UI Layer"]
+        AuthGate["AuthGate (Session Routing)"]
+        WelcomeScreen["Welcome & Auth Screen (Tabs & Demo Personas)"]
+        HelpScreen["Help Center & User Guide (10 Sections)"]
+        ResponsiveShell["Responsive Shell (Desktop Header / Mobile Nav)"]
+        HomeFeed["Home Feed (Grid / List, Filters & Search)"]
         MapScreen["Campus Map Screen (flutter_map / OSM)"]
-        ReportItem["Report Item Screen (Form & Draft Autosave)"]
+        ReportItem["Report Item Screen (Autosave Drafts)"]
         ItemDetails["Item Details Screen & Lifecycle Stepper"]
-        SubmitClaim["Claim Submission Screen (Private Challenge)"]
+        SubmitClaim["Claim Submission Screen (Zero-Knowledge Proof)"]
         ClaimMgmt["Claim Review Dashboard (Finder / Mod)"]
         HandoverScreen["Handover Verification (Salted OTP)"]
         ChatScreen["Coordination Messaging Screen"]
@@ -45,27 +53,35 @@ flowchart TD
     end
 
     subgraph State_Layer ["⚡ State Management (Riverpod 3)"]
+        AuthNotifier["AuthNotifier (Session & Role Switching)"]
         ItemsNotifier["ItemsNotifier (CRUD, Filter, Search)"]
         ClaimsNotifier["ClaimsNotifier (Submit, Review, Handover)"]
-        AuthNotifier["AuthNotifier (Profile & Role Switching)"]
         DraftsNotifier["DraftsNotifier (Autosave & Recovery)"]
         NetworkNotifier["NetworkNotifier (Sync Engine & Outbox)"]
     end
 
     subgraph Service_Layer ["⚙️ Business Logic & Services Layer"]
+        AuthService["AuthService (Session & Demo Switcher)"]
         ItemService["ItemService (Filtering, Outbox Sync, Matching)"]
         ClaimService["ClaimService (Zero-Knowledge & OTP Hash)"]
-        AuthService["AuthService (Mock/Firebase & Demo Switcher)"]
         LocalStorage["LocalStorageService (SharedPreferences)"]
         CryptoUtils["CryptoUtils (Salted SHA-256 OTP Validator)"]
     end
 
-    subgraph Backend_Layer ["☁️ Persistence & Cloud Backend"]
+    subgraph Backend_Layer ["☁️ Persistence & Deployment"]
         LocalCache["Local Storage & Persistent Outbox Queue"]
         Firestore["Cloud Firestore (Zero-Knowledge Subcollections)"]
         CloudStorage["Firebase Storage (5MB Image Quota)"]
+        VercelHost["Vercel Production Hosting (SPA Rewrites)"]
     end
 
+    AuthGate --> WelcomeScreen
+    AuthGate --> ResponsiveShell
+    ResponsiveShell --> HomeFeed
+    ResponsiveShell --> MapScreen
+    ResponsiveShell --> ReportItem
+    ResponsiveShell --> MyActivity
+    ResponsiveShell --> HelpScreen
     UI_Layer --> State_Layer
     State_Layer --> Service_Layer
     Service_Layer --> LocalCache
@@ -73,6 +89,46 @@ flowchart TD
     Service_Layer --> CloudStorage
     CryptoUtils --> ClaimService
 ```
+
+---
+
+## 🎨 Visual Identity & Design System
+
+The application uses a restrained palette tailored for a prestigious academic institution:
+
+- **Primary Brand Color**: Deep Forest Teal (`#134E4A`) — communicates safety, professionalism, and reliability.
+- **Accent Color**: Warm Amber (`#D97706`) — draws focus to important calls to action and active alerts.
+- **Background**: Soft Warm Off-White (`#FAF9F6`) — easy on the eyes during prolonged reading.
+- **Surface**: Pure White (`#FFFFFF`) with subtle 1px border (`#E2E8F0`) and soft elevation.
+- **Status Tokens**:
+  - `Lost`: Crimson Rose (`#DC2626` / `#FEF2F2`)
+  - `Found`: Emerald Teal (`#059669` / `#ECFDF5`)
+  - `Claimed`: Indigo Purple (`#4F46E5` / `#EEF2FF`)
+  - `Returned`: Slate Gray (`#475569` / `#F8FAFC`)
+
+### Responsive Breakpoints
+- **Mobile (< 640px)**: Bottom `NavigationBar`, single-column item feed, compact cards, floating action button for quick reporting.
+- **Tablet (640px – 1024px)**: 2-column item grid, persistent navigation, optimized touch targets.
+- **Desktop (>= 1024px)**: Sticky header bar with full brand logo, desktop navigation tabs, search shortcuts, quick "Report New Item" action, 3-column feed grid, and split 2-column item detail views.
+
+---
+
+## 📖 Help Center & User Guide (10 Dedicated Sections)
+
+Accessible from both the unauthenticated Welcome screen and the authenticated navigation menu, the Help Center (`lib/ui/screens/help_screen.dart`) provides complete transparency:
+
+- **A. Welcome to Finders Keepers?**: Core mission and campus problem statement.
+- **B. How to Report a Lost Item**: Step-by-step reporting guide, emphasizing non-disclosure of secret markings.
+- **C. How to Report a Found Item**: Configuring private challenge questions and safeguarding found property.
+- **D. How to Claim an Item**: Entering private proof description and answering finder challenge questions.
+- **E. Ownership Verification & 6-Digit Handover OTP**: Deep dive into the 3-tier Zero-Knowledge workflow and cryptographic tokens.
+- **F. Tracking Item Lifecycle Status**: Explanation of `lost`, `found`, `claimed`, and `returned` states.
+- **G. Approximate Location & Privacy**: How campus landmark geofencing protects personal safety.
+- **H. Offline Drafts & Outbox Synchronization**: How auto-save and background sync protect submissions in low-connectivity campus zones.
+- **I. Community Moderation & Reporting**: How to report suspicious activity or request warden mediation.
+- **J. Campus Security & Designated Handover Desks**: Official physical meeting locations at SJT and TT Security Desks.
+
+Includes a **real-time keyword search bar** allowing users to instantly filter help topics (e.g. typing "OTP" or "draft" immediately reveals relevant sections).
 
 ---
 
@@ -203,120 +259,95 @@ stateDiagram-v2
 
 ---
 
-## 📶 Offline-First Synchronization Engine
-
-Network connectivity across campus basements, auditoriums, and labs can be unreliable. **Finders Keepers?** implements an end-to-end offline engine:
-
-```mermaid
-sequenceDiagram
-    participant User as Student
-    participant UI as Report / Claim Screen
-    participant Local as SharedPreferences & Drafts
-    participant Outbox as SyncQueue (Outbox)
-    participant Cloud as Cloud Firestore
-
-    User->>UI: Types report details
-    UI->>Local: Auto-save draft every 500ms
-    Note over User,Local: If app crashes or battery dies, draft is restored!
-
-    User->>UI: Taps "Publish Report" (No Internet)
-    UI->>Local: Save item locally with status 'pending'
-    UI->>Outbox: Enqueue SyncTask (type: createItem, id, payload)
-    UI-->>User: Immediate UI update with "Queued Offline" pill
-
-    Note over Outbox,Cloud: Device reconnects to Wi-Fi / Cellular
-    Outbox->>Cloud: Process queue (Exponential backoff & retry)
-    Cloud-->>Outbox: Success (HTTP 200 / Firestore ACK)
-    Outbox->>Local: Update item status to 'synced'
-    Local->>UI: UI updates badge to "Synced to Cloud"
-```
-
-### Resiliency Features
-- **Draft Autosave & Restore**: The report screen continuously preserves form fields and selected campus landmarks. If interrupted, returning to the screen offers a *"Restore previous draft?"* prompt.
-- **Idempotent Queue**: Each `SyncTask` carries a unique UUID and idempotency key, preventing duplicate records if a submission is interrupted during transport.
-- **Visual Sync Badges**: Local changes display amber **Queued Locally** badges until server confirmation switches them to green **Synced**.
-
----
-
-## 🗺️ Campus Mapping (OpenStreetMap + Leaflet)
-
-- Uses `flutter_map` (v8.3.2) and `latlong2` centered on **VIT Vellore Campus** (`12.9698° N, 79.1559° E`).
-- **Approximate Privacy Safeguard**: Pinpoints items to pre-defined campus landmarks:
-  - Silver Jubilee Tower (SJT)
-  - Technology Tower (TT)
-  - Dr. M.G.R. Block
-  - Central Library
-  - Anna Auditorium & Amphitheatre
-  - Food Mall & Gazebo
-  - Men's Hostels (MH Blocks A–Q) & Ladies' Hostels (LH Blocks A–H)
-  - Outdoor Sports Complex
-- Exact locker numbers, seat numbers, and private contact details are withheld from map pins.
-
----
-
-## 🛡️ Security Rules
-
-### 1. Cloud Firestore Rules (`firestore.rules`)
-- **Hardened RBAC**: Only users with verified moderator status or custom claims can access `/reports` or override item states.
-- **No Self-Claim**: Reporters cannot claim their own reported items (`request.auth.uid != getItem(itemId).reporterId`).
-- **No Promotion Exploit**: Users cannot alter their own `role` field on update.
-- **State Transition Guard**: Items can only move through legal lifecycle transitions (`lost`/`found` ➔ `claimed` ➔ `returned`).
-- **Validator Function Pattern**: All fields enforce strict upper bounds (e.g. `title.size() <= 150`, `description.size() <= 2000`).
-
-### 2. Firebase Storage Rules (`storage.rules`)
-- Authenticated read/write for item photos and claim proofs.
-- File size capped at **5 MB**.
-- Content-type whitelist restricted to `image/*`.
-
----
-
 ## ⚡ Instant Evaluator Demo Profiles
 
-To facilitate friction-free evaluation without requiring manual account registration across multiple devices, the app includes a persistent **Demo Profile Switcher** on the Auth screen and in the drawer:
+To facilitate friction-free evaluation without requiring manual account registration across multiple devices, the app includes **Evaluator Demonstration Mode** on the Welcome screen:
 
-| Profile | Name | Role | Student ID | Use Case in Evaluation |
+| Profile | Name | Role | Student ID | Evaluation Function |
 |---|---|---|---|---|
-| **Profile 1** | **Aarav Sharma** | Student (Finder) | `23BCE1042` | Reported the lost Casio FX-991CW Calculator & MacBook Charger; reviews claims and validates OTP. |
-| **Profile 2** | **Priya Patel** | Student (Claimant) | `23BCE2190` | Submits ownership claim for the Casio Calculator, answers challenge question, and receives the 6-digit OTP. |
-| **Profile 3** | **Prof. Ramanathan** | Campus Moderator | `FAC20194` | Accesses the Campus Moderation Center, views disputed claims, and can override item statuses. |
+| **Persona 1** | **Aarav Sharma** | Student (Finder) | `23BCE1042` | Reported the Casio FX-991CW Calculator & MacBook Charger; reviews claims and validates OTP. |
+| **Persona 2** | **Diya Patel** | Student (Claimant) | `23BCE1984` | Submits ownership claim for the Casio Calculator, answers challenge question, and receives the 6-digit OTP. |
+| **Persona 3** | **Prof. R. Verma** | Campus Security | `FAC9021` | Accesses the Campus Moderation Center, views disputed claims, and manages campus-wide reports. |
 
 ---
 
-## 🚀 Getting Started
+## 🌐 Vercel Deployment Guide
 
-### Prerequisites
-- **Flutter SDK**: `3.47.7` or higher ([Install Guide](https://docs.flutter.dev/get-started/install))
-- **Dart SDK**: `3.13.5` or higher
-- **Web Browser**: Google Chrome or Chromium (for web preview)
-- **Android SDK** (optional, for APK build): Platform 34+, Android Build-Tools 34.0.0, Java 17+
+The application is pre-configured and optimized for direct zero-configuration hosting on **Vercel**:
 
-### 1. Clone & Install Dependencies
-```bash
-git clone https://github.com/codechef-vit/finders-keepers.git
-cd CC-Appdev
-flutter pub get
+### Configuration File: `vercel.json`
+```json
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "outputDirectory": "build/web",
+  "cleanUrls": true,
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+      ]
+    },
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    }
+  ]
+}
 ```
 
-### 2. Run the Application
+### Steps to Deploy to Vercel:
 
-#### Option A: Run on Google Chrome (Instant Web Evaluation)
+1. **Option A: Via Vercel CLI**:
+   ```bash
+   # 1. Build the release bundle
+   flutter build web --release
+
+   # 2. Deploy to production
+   vercel --prod
+   ```
+
+2. **Option B: Via Git / Vercel Web Dashboard**:
+   - Push repository to GitHub/GitLab.
+   - Import the repository in [vercel.com/new](https://vercel.com/new).
+   - In Project Settings:
+     - **Build Command**: `flutter/bin/flutter build web --release` (or leave empty if using pre-compiled `build/web`)
+     - **Output Directory**: `build/web`
+   - Click **Deploy**.
+
+---
+
+## 🚀 Local Run & Build Instructions
+
+### 1. Run Pre-Compiled Release Web Bundle Locally
 ```bash
-flutter run -d chrome
-```
-*Note: The project has also been pre-compiled into a release web bundle in `build/web`. You can immediately serve it locally:*
-```bash
-cd build/web && python3 -m http.server 8080
+python3 -m http.server 8080 --directory build/web
 # Open http://localhost:8080 in your browser
 ```
 
-#### Option B: Run on Android Emulator / Physical Device
+### 2. Run from Source via Flutter Web
 ```bash
-flutter devices
-flutter run -d <device-id>
+flutter pub get
+flutter run -d chrome
 ```
 
-#### Option C: Build Release Android APK
-Ensure Android SDK and Java 17 are installed and configured (`ANDROID_HOME` exported):
+### 3. Build Release Web Bundle
+```bash
+flutter build web --release
+```
+
+### 4. Build Release Android APK
+Ensure Android SDK and Java 17+ are installed:
 ```bash
 flutter build apk --release
 # Built APK will be available at: build/app/outputs/flutter-apk/app-release.apk
@@ -326,7 +357,7 @@ flutter build apk --release
 
 ## 🧪 Automated Testing Suite
 
-The repository includes a comprehensive automated test suite with **17 passing tests** covering cryptography, state machine transitions, zero-knowledge authorization, offline queues, and UI hierarchy.
+The repository includes a comprehensive automated test suite with **18 passing tests** covering cryptography, state machine transitions, zero-knowledge authorization, offline queues, unauthenticated routing, and responsive layouts.
 
 ```bash
 flutter test
@@ -336,14 +367,17 @@ flutter test
 
 | Test Suite | File | Tests | Coverage Scope |
 |---|---|---|---|
-| **Models & Crypto** | [`test/models_and_crypto_test.dart`](file:///Users/kingpin/Documents/CC-Appdev/test/models_and_crypto_test.dart) | 8 | Salted SHA-256 OTP generation, tampering resistance, wrong code rejection, JSON serialization, Haversine formula calculation, fuzzy search matching. |
+| **Models & Crypto** | [`test/models_and_crypto_test.dart`](file:///Users/kingpin/Documents/CC-Appdev/test/models_and_crypto_test.dart) | 8 | Salted SHA-256 OTP generation, tampering resistance, wrong code rejection, JSON serialization, Haversine distance, fuzzy search. |
 | **Claims & Workflow** | [`test/claims_verification_workflow_test.dart`](file:///Users/kingpin/Documents/CC-Appdev/test/claims_verification_workflow_test.dart) | 8 | Zero-knowledge answer isolation, finder approval state transitions, handover OTP verification, illegal status transition blocking, offline outbox enqueuing, draft persistence. |
-| **Widget & UI Smoke** | [`test/widget_test.dart`](file:///Users/kingpin/Documents/CC-Appdev/test/widget_test.dart) | 1 | App initialization, navigation bar tabs, search bar rendering, category filter chips, and seed item listing. |
+| **Widget & Navigation** | [`test/widget_test.dart`](file:///Users/kingpin/Documents/CC-Appdev/test/widget_test.dart) | 2 | Unauthenticated Welcome & Auth Gate smoke test, Help Center unauthenticated access, Evaluator Demo Switcher, Authenticated Feed, Navigation, Filters, and FAB. |
 
-### Static Analysis
+### Static Analysis & Formatting
 ```bash
 flutter analyze
 # Result: No issues found! (0 errors, 0 warnings, 0 lints)
+
+dart format --output=none --set-exit-if-changed lib test
+# Result: Formatted 38 files (0 changed)
 ```
 
 ---
@@ -360,18 +394,12 @@ flutter analyze
 | **Track items through lost, found, claimed, returned** | Visualized in [`LifecycleStepper`](file:///Users/kingpin/Documents/CC-Appdev/lib/ui/widgets/lifecycle_stepper.dart) and enforced by [`ItemService`](file:///Users/kingpin/Documents/CC-Appdev/lib/core/services/item_service.dart) & `firestore.rules`. | ✅ Verified |
 | **Interrupted submissions & network unreliability** | Draft auto-saving and persistent offline outbox queue with retry in [`LocalStorageService`](file:///Users/kingpin/Documents/CC-Appdev/lib/core/services/local_storage_service.dart). | ✅ Verified |
 | **Protect sensitive user information** | Subcollection isolation, masked contact numbers, zero public exposure of verification answers. | ✅ Verified |
-| **Bonus: Smart Matching Recommendations** | Proactive recommendation engine in [`ItemService.getPotentialMatches`](file:///Users/kingpin/Documents/CC-Appdev/lib/core/services/item_service.dart). | ✅ Verified |
+| **Responsive UI & Adaptive Navigation** | Multi-screen support (Mobile, Tablet, Desktop) with adaptive headers, bottom navigation, and grids. | ✅ Verified |
+| **Dedicated Help Center** | 10-section structured user guide with real-time keyword search, accessible before and after auth. | ✅ Verified |
+| **Vercel Ready Deployment** | Configured `vercel.json` SPA rewrites, security headers, cache policies, and `.env.example`. | ✅ Verified |
+| **Bonus: Smart Matching Recommendations** | Proactive recommendation engine in [`ItemService.findPotentialMatches`](file:///Users/kingpin/Documents/CC-Appdev/lib/core/services/item_service.dart). | ✅ Verified |
 | **Bonus: Secure Coordination Messaging** | In-app finder-claimant messaging in [`ChatScreen`](file:///Users/kingpin/Documents/CC-Appdev/lib/ui/screens/chat_screen.dart). | ✅ Verified |
 | **Bonus: Campus Moderation Dashboard** | Flagging and resolution system in [`ModerationScreen`](file:///Users/kingpin/Documents/CC-Appdev/lib/ui/screens/moderation_screen.dart). | ✅ Verified |
-
----
-
-## 📄 Key Project Files
-
-- **Architecture Decisions**: [`DECISIONS.md`](file:///Users/kingpin/Documents/CC-Appdev/DECISIONS.md) (in-depth rationale for technical choices, trade-offs, and limitations)
-- **Security Rules**: [`firestore.rules`](file:///Users/kingpin/Documents/CC-Appdev/firestore.rules) & [`storage.rules`](file:///Users/kingpin/Documents/CC-Appdev/storage.rules)
-- **State Management**: [`lib/providers/app_providers.dart`](file:///Users/kingpin/Documents/CC-Appdev/lib/providers/app_providers.dart)
-- **Verification Engine**: [`lib/core/services/claim_service.dart`](file:///Users/kingpin/Documents/CC-Appdev/lib/core/services/claim_service.dart) & [`lib/core/utils/crypto_utils.dart`](file:///Users/kingpin/Documents/CC-Appdev/lib/core/utils/crypto_utils.dart)
 
 ---
 

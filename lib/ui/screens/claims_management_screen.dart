@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../core/constants/app_theme.dart';
 import '../../core/models/item_model.dart';
 import '../../core/models/claim_model.dart';
@@ -11,70 +12,79 @@ import 'chat_screen.dart';
 class ClaimsManagementScreen extends ConsumerWidget {
   final ItemModel item;
 
-  const ClaimsManagementScreen({
-    super.key,
-    required this.item,
-  });
+  const ClaimsManagementScreen({super.key, required this.item});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentUser = ref.watch(currentUserProvider);
     final claimService = ref.watch(claimServiceProvider);
-    
-    // Watch claims list from provider to reactively rebuild on changes
+
     ref.watch(claimsProvider);
     final claims = currentUser != null
         ? claimService.getClaimsForItem(itemId: item.id, user: currentUser)
         : <ClaimModel>[];
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Review Claims'),
-      ),
-      body: claims.isEmpty
-          ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 64,
-                      height: 64,
-                      decoration: BoxDecoration(
-                        color: Colors.blue.shade50,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.mark_email_read_outlined,
-                          size: 32, color: AppTheme.primaryBlue),
+      appBar: AppBar(title: const Text('Review Claims')),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 720),
+          child: claims.isEmpty
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 68,
+                          height: 68,
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryTeal.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.mark_email_read_outlined,
+                            size: 34,
+                            color: AppTheme.primaryTeal,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'No Claims Submitted Yet',
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        const Text(
+                          'When students submit ownership claims on this item, their non-public verification answers will appear here for your private review.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: AppTheme.textSecondary,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'No Claims Submitted Yet',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF0F172A),
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    const Text(
-                      'When students submit ownership claims on this item, their non-public verification answers will appear here for your review.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
-                    ),
-                  ],
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 20,
+                  ),
+                  itemCount: claims.length,
+                  itemBuilder: (context, index) {
+                    final claim = claims[index];
+                    return _ClaimReviewCard(item: item, claim: claim);
+                  },
                 ),
-              ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: claims.length,
-              itemBuilder: (context, index) {
-                final claim = claims[index];
-                return _ClaimReviewCard(item: item, claim: claim);
-              },
-            ),
+        ),
+      ),
     );
   }
 }
@@ -83,22 +93,21 @@ class _ClaimReviewCard extends ConsumerWidget {
   final ItemModel item;
   final ClaimModel claim;
 
-  const _ClaimReviewCard({
-    required this.item,
-    required this.claim,
-  });
+  const _ClaimReviewCard({required this.item, required this.claim});
 
   void _showAcceptDialog(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Accept Ownership Claim?'),
         content: Text(
           'Are you sure you want to approve ${claim.claimantName}\'s claim? This will:\n\n'
           '• Transition this item to "Claimed".\n'
           '• Generate a cryptographically secure 6-digit Handover Token for the claimant.\n'
           '• Decline any other pending claims.\n\n'
-          'You will verify the 6-digit code in-person before handing over the item.',
+          'You will verify the 6-digit code in person before handing over the item.',
+          style: const TextStyle(height: 1.4, fontSize: 13.5),
         ),
         actions: [
           TextButton(
@@ -112,10 +121,9 @@ class _ClaimReviewCard extends ConsumerWidget {
             onPressed: () async {
               Navigator.pop(ctx);
               final reviewer = ref.read(currentUserProvider)!;
-              await ref.read(claimsProvider.notifier).approveClaim(
-                    claimId: claim.id,
-                    reviewer: reviewer,
-                  );
+              await ref
+                  .read(claimsProvider.notifier)
+                  .approveClaim(claimId: claim.id, reviewer: reviewer);
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -139,6 +147,7 @@ class _ClaimReviewCard extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Decline Claim'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -146,7 +155,7 @@ class _ClaimReviewCard extends ConsumerWidget {
           children: [
             const Text(
               'Specify why this verification claim is being declined:',
-              style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+              style: TextStyle(fontSize: 13, color: AppTheme.textSecondary),
             ),
             const SizedBox(height: 12),
             TextField(
@@ -169,16 +178,16 @@ class _ClaimReviewCard extends ConsumerWidget {
             onPressed: () async {
               Navigator.pop(ctx);
               final reviewer = ref.read(currentUserProvider)!;
-              await ref.read(claimsProvider.notifier).rejectClaim(
+              await ref
+                  .read(claimsProvider.notifier)
+                  .rejectClaim(
                     claimId: claim.id,
                     reviewer: reviewer,
                     reason: reasonController.text,
                   );
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Claim declined.'),
-                  ),
+                  const SnackBar(content: Text('Claim declined.')),
                 );
               }
             },
@@ -229,7 +238,7 @@ class _ClaimReviewCard extends ConsumerWidget {
         ),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -237,12 +246,12 @@ class _ClaimReviewCard extends ConsumerWidget {
             Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                  backgroundColor: AppTheme.primaryTeal.withValues(alpha: 0.1),
                   child: Text(
                     claim.claimantName.isNotEmpty ? claim.claimantName[0] : 'S',
                     style: const TextStyle(
                       fontWeight: FontWeight.w700,
-                      color: AppTheme.primaryBlue,
+                      color: AppTheme.primaryTeal,
                     ),
                   ),
                 ),
@@ -256,22 +265,24 @@ class _ClaimReviewCard extends ConsumerWidget {
                         style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
-                          color: Color(0xFF0F172A),
+                          color: AppTheme.textPrimary,
                         ),
                       ),
                       Text(
                         Formatters.formatDate(claim.createdAt),
                         style: const TextStyle(
                           fontSize: 12,
-                          color: Color(0xFF64748B),
+                          color: AppTheme.textSecondary,
                         ),
                       ),
                     ],
                   ),
                 ),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: statusBg,
                     borderRadius: BorderRadius.circular(8),
@@ -292,23 +303,20 @@ class _ClaimReviewCard extends ConsumerWidget {
             // Submitted Non-Public Answer to Verification Question
             if (claim.answerToQuestion.isNotEmpty) ...[
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: AppTheme.statusFoundBg.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: AppTheme.statusFound.withValues(alpha: 0.3),
-                  ),
+                  color: AppTheme.statusFoundBg,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppTheme.statusFoundBorder),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
+                    const Row(
                       children: [
-                        const Icon(Icons.lock,
-                            size: 14, color: AppTheme.statusFound),
-                        const SizedBox(width: 6),
-                        const Text(
+                        Icon(Icons.lock, size: 14, color: AppTheme.statusFound),
+                        SizedBox(width: 6),
+                        Text(
                           'Answer to Verification Challenge:',
                           style: TextStyle(
                             fontSize: 12,
@@ -324,7 +332,7 @@ class _ClaimReviewCard extends ConsumerWidget {
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF0F172A),
+                        color: AppTheme.textPrimary,
                       ),
                     ),
                   ],
@@ -339,7 +347,7 @@ class _ClaimReviewCard extends ConsumerWidget {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF475569),
+                color: AppTheme.textSecondary,
               ),
             ),
             const SizedBox(height: 4),
@@ -347,11 +355,11 @@ class _ClaimReviewCard extends ConsumerWidget {
               claim.proofDescription,
               style: const TextStyle(
                 fontSize: 13,
-                color: Color(0xFF334155),
+                color: AppTheme.textPrimary,
                 height: 1.4,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 18),
 
             // Action Row
             if (claim.isPending) ...[
@@ -362,7 +370,7 @@ class _ClaimReviewCard extends ConsumerWidget {
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppTheme.statusLost,
                         side: const BorderSide(color: AppTheme.statusLost),
-                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
                       onPressed: () => _showRejectDialog(context, ref),
                       child: const Text('Decline'),
@@ -373,7 +381,7 @@ class _ClaimReviewCard extends ConsumerWidget {
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.statusReturned,
-                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
                       onPressed: () => _showAcceptDialog(context, ref),
                       child: const Text('Verify & Approve'),
@@ -391,19 +399,16 @@ class _ClaimReviewCard extends ConsumerWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => ChatScreen(
-                          item: item,
-                          claim: claim,
-                        ),
+                        builder: (_) => ChatScreen(item: item, claim: claim),
                       ),
                     );
                   },
                 ),
               ),
             ] else if (claim.isApproved) ...[
-              // Already approved: Finder can jump directly to verify the 6-digit OTP
               SizedBox(
                 width: double.infinity,
+                height: 48,
                 child: ElevatedButton.icon(
                   icon: const Icon(Icons.vpn_key_outlined),
                   label: const Text('Validate In-Person Handover OTP'),
@@ -434,10 +439,7 @@ class _ClaimReviewCard extends ConsumerWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => ChatScreen(
-                          item: item,
-                          claim: claim,
-                        ),
+                        builder: (_) => ChatScreen(item: item, claim: claim),
                       ),
                     );
                   },

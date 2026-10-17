@@ -1,5 +1,7 @@
 import 'dart:convert';
+
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../models/item_model.dart';
 import '../models/claim_model.dart';
 import '../models/user_model.dart';
@@ -106,7 +108,9 @@ class LocalStorageService {
     final raw = _prefs.getStringList(_keyOutbox);
     if (raw == null) return [];
     try {
-      return raw.map((str) => OfflineSyncTask.fromMap(jsonDecode(str))).toList();
+      return raw
+          .map((str) => OfflineSyncTask.fromMap(jsonDecode(str)))
+          .toList();
     } catch (_) {
       return [];
     }
