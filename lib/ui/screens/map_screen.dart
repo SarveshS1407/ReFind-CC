@@ -33,13 +33,17 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     super.dispose();
   }
 
+  void _jumpToLandmark(CampusLocation loc) {
+    _mapController.move(LatLng(loc.latitude, loc.longitude), 17.0);
+  }
+
   @override
   Widget build(BuildContext context) {
     final filteredItems = ref.watch(filteredItemsProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Campus Item Map'),
+        title: const Text('Campus Item Map (VIT Vellore)'),
         actions: [
           IconButton(
             icon: const Icon(Icons.my_location),
@@ -72,7 +76,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             children: [
               TileLayer(
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.codechefvit.finderskeepers',
+                userAgentPackageName: 'com.codechefvit.refind',
               ),
               MarkerLayer(
                 markers: filteredItems.map((item) {
@@ -132,45 +136,64 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             ],
           ),
 
-          // Top Info Banner: Privacy Guarantee
+          // Top Info Banner: Privacy Guarantee + Quick Landmarks
           Positioned(
             top: 12,
             left: 16,
             right: 16,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.92),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppTheme.cardBorder),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.06),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
                   ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.privacy_tip_outlined,
-                    size: 16,
-                    color: AppTheme.primaryTeal,
+                  decoration: BoxDecoration(
+                    color: AppTheme.cardColor(context).withValues(alpha: 0.95),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppTheme.borderColor(context)),
+                    boxShadow: AppTheme.subtleCardShadow,
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Privacy Notice: Markers show approximate campus zones (${filteredItems.length} items visible).',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF334155),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.privacy_tip_outlined,
+                        size: 16,
+                        color: AppTheme.primaryIndigo,
                       ),
-                    ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Privacy Protected: Markers show approximate campus zones (${filteredItems.length} items visible).',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.textPrimaryColor(context),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 8),
+                // Quick Landmark Selector
+                SizedBox(
+                  height: 32,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: [
+                      _buildQuickJumpChip('sjt', 'SJT'),
+                      _buildQuickJumpChip('tt', 'Tech Tower'),
+                      _buildQuickJumpChip('lib', 'Central Library'),
+                      _buildQuickJumpChip('food_mall', 'Food Mall'),
+                      _buildQuickJumpChip('smv', 'SMV Block'),
+                      _buildQuickJumpChip('mb', 'Main Building'),
+                      _buildQuickJumpChip('mens_hostel', "Men's Hostels"),
+                      _buildQuickJumpChip('womens_hostel', "Ladies' Hostels"),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
 
@@ -182,8 +205,10 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               right: 16,
               child: Card(
                 elevation: 6,
+                color: AppTheme.cardColor(context),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(color: AppTheme.borderColor(context)),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
@@ -215,10 +240,10 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                       const SizedBox(height: 8),
                       Text(
                         _selectedItem!.title,
-                        style: const TextStyle(
-                          fontSize: 15,
+                        style: TextStyle(
+                          fontSize: 15.5,
                           fontWeight: FontWeight.w700,
-                          color: Color(0xFF0F172A),
+                          color: AppTheme.textPrimaryColor(context),
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -229,38 +254,43 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                           const Icon(
                             Icons.location_on,
                             size: 14,
-                            color: AppTheme.primaryTeal,
+                            color: AppTheme.primaryIndigo,
                           ),
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
                               _selectedItem!.campusLocationName,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 13,
-                                color: Color(0xFF64748B),
+                                color: AppTheme.textSecondaryColor(context),
                               ),
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 12),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                    ItemDetailsScreen(item: _selectedItem!),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        ItemDetailsScreen(item: _selectedItem!),
+                                  ),
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 10,
+                                ),
                               ),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 10),
+                              child: const Text('View Full Details & Claim'),
+                            ),
                           ),
-                          child: const Text('View Full Details & Claim'),
-                        ),
+                        ],
                       ),
                     ],
                   ),
@@ -268,6 +298,27 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               ),
             ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildQuickJumpChip(String id, String label) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 6),
+      child: ActionChip(
+        label: Text(label),
+        labelStyle: TextStyle(
+          fontSize: 11.5,
+          fontWeight: FontWeight.w600,
+          color: AppTheme.textPrimaryColor(context),
+        ),
+        backgroundColor: AppTheme.cardColor(context).withValues(alpha: 0.95),
+        side: BorderSide(color: AppTheme.borderColor(context)),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
+        onPressed: () {
+          final loc = CampusConstants.findById(id);
+          _jumpToLandmark(loc);
+        },
       ),
     );
   }

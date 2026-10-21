@@ -308,5 +308,112 @@ void main() {
           .first;
       expect(completedClaim.status, ClaimStatus.handedOver);
     });
+
+    test('Claim Lifecycle: Finder requests more info, claimant responds, transitions to underReview', () async {
+      await storage.setSimulatedOffline(false);
+
+      final foundBag = await itemService.reportItem(
+        title: 'Wildcraft Backpack',
+        description: 'Black backpack found at TT Food Court',
+        category: 'bags',
+        type: ItemType.found,
+        campusLocationId: 'tt',
+        campusLocationName: 'Technology Tower',
+        latitude: 12.9710,
+        longitude: 79.1590,
+        reporterId: finder.id,
+        reporterName: finder.displayName,
+      );
+
+      final claim = await claimService.submitClaim(
+        itemId: foundBag.id,
+        claimant: claimantA,
+        proofDescription: 'It has an iron-on patch.',
+        answerToQuestion: 'NASA badge',
+      );
+
+      expect(claim.status, ClaimStatus.pending);
+
+      // Finder requests more information
+      await claimService.requestMoreInfo(
+        claimId: claim.id,
+        reviewer: finder,
+        requestMessage: 'What shape and color is the iron-on patch?',
+      );
+
+      final updatedClaim = claimService
+          .getMySubmittedClaims(claimantA.id)
+          .first;
+      expect(updatedClaim.status, ClaimStatus.moreInfoNeeded);
+      expect(
+        updatedClaim.moreInfoRequest,
+        'What shape and color is the iron-on patch?',
+      );
+
+      // Claimant responds
+      await claimService.respondToMoreInfo(
+        claimId: claim.id,
+        claimant: claimantA,
+        responseMessage: 'It is a yellow triangular NASA space badge.',
+      );
+
+      final reviewedClaim = claimService
+          .getMySubmittedClaims(claimantA.id)
+          .first;
+      expect(reviewedClaim.status, ClaimStatus.underReview);
+      expect(
+        reviewedClaim.moreInfoResponse,
+        'It is a yellow triangular NASA space badge.',
+      );
+    });
+
+    test(
+      'Claim Lifecycle: Claimant can withdraw pending or moreInfoNeeded claim',
+      () async {
+        await storage.setSimulatedOffline(false);
+
+        final foundBottle = await itemService.reportItem(
+          title: 'Milton Flask',
+          description: 'Blue thermos flask left in SMV 102',
+          category: 'other',
+          type: ItemType.found,
+          campusLocationId: 'smv',
+          campusLocationName: 'SMV Block',
+          latitude: 12.9698,
+          longitude: 79.1555,
+          reporterId: finder.id,
+          reporterName: finder.displayName,
+        );
+
+        final claim = await claimService.submitClaim(
+          itemId: foundBottle.id,
+          claimant: claimantB,
+          proofDescription: 'Has my roll number at the bottom.',
+          answerToQuestion: '23BCE1003',
+        );
+
+        expect(claim.status, ClaimStatus.pending);
+
+        // Unauthorized user cannot withdraw
+        expect(
+          () => claimService.withdrawClaim(
+            claimId: claim.id,
+            claimant: unauthorizedUser,
+          ),
+          throwsA(isA<Exception>()),
+        );
+
+        // Claimant withdraws
+        await claimService.withdrawClaim(
+          claimId: claim.id,
+          claimant: claimantB,
+        );
+
+        final withdrawnClaim = claimService
+            .getMySubmittedClaims(claimantB.id)
+            .first;
+        expect(withdrawnClaim.status, ClaimStatus.withdrawn);
+      },
+    );
   });
 }

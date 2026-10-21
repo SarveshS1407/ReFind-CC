@@ -15,6 +15,7 @@ import '../widgets/lifecycle_stepper.dart';
 import 'submit_claim_screen.dart';
 import 'claims_management_screen.dart';
 import 'handover_screen.dart';
+import 'welcome_auth_screen.dart';
 
 class ItemDetailsScreen extends ConsumerWidget {
   final ItemModel item;
@@ -79,9 +80,10 @@ class ItemDetailsScreen extends ConsumerWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _buildMapCard(currentItem),
+                            _buildMapCard(context, currentItem),
                             const SizedBox(height: 20),
                             _buildReporterCard(
+                              context,
                               currentItem,
                               isReporter,
                               myClaim,
@@ -96,22 +98,23 @@ class ItemDetailsScreen extends ConsumerWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _buildHeaderInfo(currentItem, category),
+                            _buildHeaderInfo(context, currentItem, category),
                             const SizedBox(height: 20),
                             LifecycleStepper(
                               status: currentItem.status,
                               type: currentItem.type,
                             ),
                             const SizedBox(height: 20),
-                            _buildDescriptionCard(currentItem),
+                            _buildDescriptionCard(context, currentItem),
                             if (currentItem.isFound &&
                                 currentItem.verificationQuestion != null) ...[
                               const SizedBox(height: 20),
-                              _buildChallengeCard(currentItem),
+                              _buildChallengeCard(context, currentItem),
                             ],
                             const SizedBox(height: 24),
                             _buildActionArea(
                               context,
+                              ref,
                               currentItem,
                               isReporter,
                               isModerator,
@@ -119,7 +122,7 @@ class ItemDetailsScreen extends ConsumerWidget {
                               myClaim,
                             ),
                             if (recommendations.isNotEmpty) ...[
-                              const SizedBox(height: 24),
+                              const SizedBox(height: 28),
                               _buildRecommendations(context, recommendations),
                             ],
                           ],
@@ -130,37 +133,42 @@ class ItemDetailsScreen extends ConsumerWidget {
                 : Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildHeaderInfo(currentItem, category),
+                      _buildHeaderInfo(context, currentItem, category),
                       const SizedBox(height: 16),
                       LifecycleStepper(
                         status: currentItem.status,
                         type: currentItem.type,
                       ),
-                      const SizedBox(height: 20),
-                      _buildDescriptionCard(currentItem),
+                      const SizedBox(height: 16),
+                      _buildDescriptionCard(context, currentItem),
                       if (currentItem.isFound &&
                           currentItem.verificationQuestion != null) ...[
-                        const SizedBox(height: 20),
-                        _buildChallengeCard(currentItem),
+                        const SizedBox(height: 16),
+                        _buildChallengeCard(context, currentItem),
                       ],
+                      const SizedBox(height: 16),
+                      _buildMapCard(context, currentItem),
+                      const SizedBox(height: 16),
+                      _buildReporterCard(
+                        context,
+                        currentItem,
+                        isReporter,
+                        myClaim,
+                      ),
                       const SizedBox(height: 20),
-                      _buildMapCard(currentItem),
-                      const SizedBox(height: 20),
-                      _buildReporterCard(currentItem, isReporter, myClaim),
-                      const SizedBox(height: 24),
-                      if (recommendations.isNotEmpty) ...[
-                        _buildRecommendations(context, recommendations),
-                        const SizedBox(height: 20),
-                      ],
                       _buildActionArea(
                         context,
+                        ref,
                         currentItem,
                         isReporter,
                         isModerator,
                         itemClaims,
                         myClaim,
                       ),
-                      const SizedBox(height: 32),
+                      if (recommendations.isNotEmpty) ...[
+                        const SizedBox(height: 24),
+                        _buildRecommendations(context, recommendations),
+                      ],
                     ],
                   ),
           ),
@@ -169,7 +177,11 @@ class ItemDetailsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeaderInfo(ItemModel currentItem, ItemCategory category) {
+  Widget _buildHeaderInfo(
+    BuildContext context,
+    ItemModel currentItem,
+    ItemCategory category,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -191,7 +203,7 @@ class ItemDetailsScreen extends ConsumerWidget {
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: AppTheme.accentAmber.withValues(alpha: 0.1),
+                  color: AppTheme.accentAmber.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: AppTheme.accentAmber),
                 ),
@@ -209,10 +221,10 @@ class ItemDetailsScreen extends ConsumerWidget {
         const SizedBox(height: 14),
         Text(
           currentItem.title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.w800,
-            color: AppTheme.textPrimary,
+            color: AppTheme.textPrimaryColor(context),
             letterSpacing: -0.3,
             height: 1.25,
           ),
@@ -220,22 +232,25 @@ class ItemDetailsScreen extends ConsumerWidget {
         const SizedBox(height: 6),
         Row(
           children: [
-            Icon(category.icon, size: 16, color: AppTheme.primaryTeal),
+            Icon(category.icon, size: 16, color: AppTheme.primaryIndigo),
             const SizedBox(width: 6),
             Text(
               category.name,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.textSecondary,
+                color: AppTheme.textSecondaryColor(context),
               ),
             ),
-            const Text(' • ', style: TextStyle(color: AppTheme.textMuted)),
+            Text(
+              ' • ',
+              style: TextStyle(color: AppTheme.textMutedColor(context)),
+            ),
             Text(
               Formatters.formatFullDate(currentItem.dateReported),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
-                color: AppTheme.textSecondary,
+                color: AppTheme.textSecondaryColor(context),
               ),
             ),
           ],
@@ -244,16 +259,16 @@ class ItemDetailsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildDescriptionCard(ItemModel currentItem) {
+  Widget _buildDescriptionCard(BuildContext context, ItemModel currentItem) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Item Description',
+        Text(
+          'Description',
           style: TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w700,
-            color: AppTheme.textPrimary,
+            color: AppTheme.textPrimaryColor(context),
           ),
         ),
         const SizedBox(height: 6),
@@ -261,17 +276,17 @@ class ItemDetailsScreen extends ConsumerWidget {
           width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppTheme.cardColor(context),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppTheme.cardBorder),
+            border: Border.all(color: AppTheme.borderColor(context)),
             boxShadow: AppTheme.subtleCardShadow,
           ),
           child: Text(
             currentItem.description,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
+              color: AppTheme.textPrimaryColor(context),
               height: 1.5,
-              color: AppTheme.textSecondary,
             ),
           ),
         ),
@@ -279,56 +294,64 @@ class ItemDetailsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildChallengeCard(ItemModel currentItem) {
+  Widget _buildChallengeCard(BuildContext context, ItemModel currentItem) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Finder Ownership Challenge',
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w700,
-            color: AppTheme.textPrimary,
-          ),
+        Row(
+          children: [
+            const Icon(Icons.security, size: 16, color: AppTheme.statusFound),
+            const SizedBox(width: 6),
+            Text(
+              'Zero-Knowledge Verification Challenge',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.textPrimaryColor(context),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 6),
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppTheme.statusFoundBg,
+            color: AppTheme.isDark(context)
+                ? AppTheme.surfaceDarkSubtle
+                : AppTheme.statusFoundBg.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppTheme.statusFoundBorder),
+            border: Border.all(
+              color: AppTheme.statusFound.withValues(alpha: 0.3),
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  const Icon(
-                    Icons.help_outline,
-                    size: 20,
-                    color: AppTheme.statusFound,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      currentItem.verificationQuestion!,
-                      style: const TextStyle(
-                        fontSize: 14.5,
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.textPrimary,
-                      ),
-                    ),
-                  ),
-                ],
+              const Text(
+                'Finder posed the following question for potential claimants:',
+                style: TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.statusFound,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                '"${currentItem.verificationQuestion!}"',
+                style: TextStyle(
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w700,
+                  fontStyle: FontStyle.italic,
+                  color: AppTheme.textPrimaryColor(context),
+                ),
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Zero-Knowledge Privacy: Claim answers are stored in isolated subcollections. Third parties browsing the feed cannot see other students\' proof.',
+              Text(
+                'Security Guarantee: Correct answers are never published. When you submit a claim, your answer is strictly delivered to the finder in a private verification subcollection.',
                 style: TextStyle(
-                  fontSize: 12,
-                  color: AppTheme.textSecondary,
+                  fontSize: 11.5,
+                  color: AppTheme.textSecondaryColor(context),
                   height: 1.4,
                 ),
               ),
@@ -339,27 +362,27 @@ class ItemDetailsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildMapCard(ItemModel currentItem) {
+  Widget _buildMapCard(BuildContext context, ItemModel currentItem) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              'Campus Location',
+            Text(
+              'Campus Location (VIT Vellore)',
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
-                color: AppTheme.textPrimary,
+                color: AppTheme.textPrimaryColor(context),
               ),
             ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
-                color: AppTheme.statusReturnedBg,
+                color: AppTheme.statusReturnedBgLight,
                 borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: AppTheme.statusReturnedBorder),
+                border: Border.all(color: AppTheme.statusReturnedBorderLight),
               ),
               child: const Text(
                 'Approximate Area',
@@ -377,7 +400,7 @@ class ItemDetailsScreen extends ConsumerWidget {
           height: 200,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppTheme.cardBorder),
+            border: Border.all(color: AppTheme.borderColor(context)),
             boxShadow: AppTheme.subtleCardShadow,
           ),
           clipBehavior: Clip.antiAlias,
@@ -395,7 +418,7 @@ class ItemDetailsScreen extends ConsumerWidget {
             children: [
               TileLayer(
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.codechefvit.finderskeepers',
+                userAgentPackageName: 'com.codechefvit.refind',
               ),
               CircleLayer(
                 circles: [
@@ -403,8 +426,8 @@ class ItemDetailsScreen extends ConsumerWidget {
                     point: LatLng(currentItem.latitude, currentItem.longitude),
                     radius: 40,
                     useRadiusInMeter: true,
-                    color: AppTheme.primaryTeal.withValues(alpha: 0.2),
-                    borderColor: AppTheme.primaryTeal,
+                    color: AppTheme.primaryIndigo.withValues(alpha: 0.2),
+                    borderColor: AppTheme.primaryIndigo,
                     borderStrokeWidth: 2,
                   ),
                 ],
@@ -417,7 +440,7 @@ class ItemDetailsScreen extends ConsumerWidget {
                     height: 36,
                     child: Container(
                       decoration: const BoxDecoration(
-                        color: AppTheme.primaryTeal,
+                        color: AppTheme.primaryIndigo,
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
@@ -435,15 +458,35 @@ class ItemDetailsScreen extends ConsumerWidget {
         const SizedBox(height: 8),
         Row(
           children: [
-            const Icon(Icons.place, size: 16, color: AppTheme.primaryTeal),
+            const Icon(Icons.place, size: 16, color: AppTheme.primaryIndigo),
             const SizedBox(width: 6),
-            Text(
-              currentItem.campusLocationName,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.textPrimary,
+            Expanded(
+              child: Text(
+                currentItem.campusLocationName,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.textPrimaryColor(context),
+                ),
               ),
+            ),
+            // External Google Maps directions button
+            TextButton.icon(
+              icon: const Icon(Icons.directions, size: 15),
+              label: const Text('Directions', style: TextStyle(fontSize: 12)),
+              style: TextButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+              ),
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'Google Maps navigation target: ${currentItem.campusLocationName} (${currentItem.latitude.toStringAsFixed(4)}, ${currentItem.longitude.toStringAsFixed(4)})',
+                    ),
+                  ),
+                );
+              },
             ),
           ],
         ),
@@ -452,6 +495,7 @@ class ItemDetailsScreen extends ConsumerWidget {
   }
 
   Widget _buildReporterCard(
+    BuildContext context,
     ItemModel currentItem,
     bool isReporter,
     ClaimModel? myClaim,
@@ -459,34 +503,34 @@ class ItemDetailsScreen extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Reported By',
           style: TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w700,
-            color: AppTheme.textPrimary,
+            color: AppTheme.textPrimaryColor(context),
           ),
         ),
         const SizedBox(height: 6),
         Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppTheme.cardColor(context),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppTheme.cardBorder),
+            border: Border.all(color: AppTheme.borderColor(context)),
             boxShadow: AppTheme.subtleCardShadow,
           ),
           child: Row(
             children: [
               CircleAvatar(
-                backgroundColor: AppTheme.primaryTeal.withValues(alpha: 0.1),
+                backgroundColor: AppTheme.primaryIndigo.withValues(alpha: 0.1),
                 child: Text(
                   currentItem.reporterName.isNotEmpty
                       ? currentItem.reporterName[0]
                       : 'S',
                   style: const TextStyle(
                     fontWeight: FontWeight.w700,
-                    color: AppTheme.primaryTeal,
+                    color: AppTheme.primaryIndigo,
                   ),
                 ),
               ),
@@ -497,19 +541,19 @@ class ItemDetailsScreen extends ConsumerWidget {
                   children: [
                     Text(
                       currentItem.reporterName,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
-                        color: AppTheme.textPrimary,
+                        color: AppTheme.textPrimaryColor(context),
                       ),
                     ),
                     const SizedBox(height: 2),
                     Row(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.lock_outline,
                           size: 12,
-                          color: AppTheme.textMuted,
+                          color: AppTheme.textMutedColor(context),
                         ),
                         const SizedBox(width: 4),
                         Text(
@@ -517,9 +561,9 @@ class ItemDetailsScreen extends ConsumerWidget {
                               ? (currentItem.reporterContact ??
                                     'Verified Campus Student')
                               : 'Contact details hidden for privacy',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
-                            color: AppTheme.textSecondary,
+                            color: AppTheme.textSecondaryColor(context),
                           ),
                         ),
                       ],
@@ -541,28 +585,28 @@ class ItemDetailsScreen extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Potential Matching Reports Nearby',
           style: TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w700,
-            color: AppTheme.textPrimary,
+            color: AppTheme.textPrimaryColor(context),
           ),
         ),
         const SizedBox(height: 8),
         ...recommendations.take(2).map((rec) {
           return Card(
             margin: const EdgeInsets.only(bottom: 8),
-            color: AppTheme.statusFoundBg.withValues(alpha: 0.4),
+            color: AppTheme.cardColor(context),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
-              side: const BorderSide(color: AppTheme.statusFoundBorder),
+              side: BorderSide(color: AppTheme.borderColor(context)),
             ),
             child: ListTile(
               dense: true,
               leading: const Icon(
                 Icons.auto_awesome,
-                color: AppTheme.statusFound,
+                color: AppTheme.primaryIndigo,
               ),
               title: Text(
                 rec.matchedItem.title,
@@ -593,12 +637,15 @@ class ItemDetailsScreen extends ConsumerWidget {
 
   Widget _buildActionArea(
     BuildContext context,
+    WidgetRef ref,
     ItemModel currentItem,
     bool isReporter,
     bool isModerator,
     List<ClaimModel> itemClaims,
     ClaimModel? myClaim,
   ) {
+    final currentUser = ref.watch(currentUserProvider);
+
     if (isReporter || isModerator) {
       return Column(
         children: [
@@ -646,23 +693,35 @@ class ItemDetailsScreen extends ConsumerWidget {
     }
 
     if (myClaim != null) {
+      Color bg;
+      Color border;
+      Color text;
+
+      if (myClaim.isApproved) {
+        bg = AppTheme.statusReturnedBgLight;
+        border = AppTheme.statusReturnedBorderLight;
+        text = AppTheme.statusReturned;
+      } else if (myClaim.isRejected) {
+        bg = AppTheme.statusLostBgLight;
+        border = AppTheme.statusLostBorderLight;
+        text = AppTheme.statusLost;
+      } else if (myClaim.isMoreInfoNeeded) {
+        bg = AppTheme.syncWarningBg;
+        border = AppTheme.syncWarningBorder;
+        text = AppTheme.syncWarning;
+      } else {
+        bg = AppTheme.statusClaimedBgLight;
+        border = AppTheme.statusClaimedBorderLight;
+        text = AppTheme.statusClaimed;
+      }
+
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: myClaim.isApproved
-              ? AppTheme.statusReturnedBg
-              : myClaim.isRejected
-              ? AppTheme.statusLostBg
-              : AppTheme.statusClaimedBg,
+          color: bg,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: myClaim.isApproved
-                ? AppTheme.statusReturnedBorder
-                : myClaim.isRejected
-                ? AppTheme.statusLostBorder
-                : AppTheme.statusClaimedBorder,
-          ),
+          border: Border.all(color: border),
         ),
         child: Column(
           children: [
@@ -671,16 +730,14 @@ class ItemDetailsScreen extends ConsumerWidget {
                   ? 'Claim Verified! Show your handover code to the finder.'
                   : myClaim.isRejected
                   ? 'Claim Rejected: ${myClaim.rejectionReason ?? "Details did not match."}'
+                  : myClaim.isMoreInfoNeeded
+                  ? 'Finder requested more information: "${myClaim.moreInfoRequest}"'
                   : 'Your claim is currently under review by the finder.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 14,
-                color: myClaim.isApproved
-                    ? AppTheme.statusReturned
-                    : myClaim.isRejected
-                    ? AppTheme.statusLost
-                    : AppTheme.statusClaimed,
+                color: text,
               ),
             ),
             if (myClaim.isApproved && myClaim.handoverCode != null) ...[
@@ -705,6 +762,29 @@ class ItemDetailsScreen extends ConsumerWidget {
                 },
               ),
             ],
+            if (myClaim.isPending || myClaim.isMoreInfoNeeded) ...[
+              const SizedBox(height: 10),
+              TextButton.icon(
+                icon: const Icon(Icons.close, size: 16),
+                label: const Text('Withdraw My Claim'),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppTheme.statusLost,
+                ),
+                onPressed: () async {
+                  await ref
+                      .read(claimsProvider.notifier)
+                      .withdrawClaim(
+                        claimId: myClaim.id,
+                        claimant: currentUser!,
+                      );
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Claim withdrawn.')),
+                    );
+                  }
+                },
+              ),
+            ],
           ],
         ),
       );
@@ -723,16 +803,23 @@ class ItemDetailsScreen extends ConsumerWidget {
           ),
           style: ElevatedButton.styleFrom(
             backgroundColor: currentItem.isFound
-                ? AppTheme.statusFound
+                ? AppTheme.primaryIndigo
                 : AppTheme.statusLost,
           ),
           onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => SubmitClaimScreen(item: currentItem),
-              ),
-            );
+            if (currentUser == null) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const WelcomeAuthScreen()),
+              );
+            } else {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => SubmitClaimScreen(item: currentItem),
+                ),
+              );
+            }
           },
         ),
       );
@@ -742,7 +829,7 @@ class ItemDetailsScreen extends ConsumerWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppTheme.statusReturnedBg,
+        color: AppTheme.statusReturnedBgLight,
         borderRadius: BorderRadius.circular(12),
       ),
       child: const Center(

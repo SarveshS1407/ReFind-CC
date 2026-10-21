@@ -196,6 +196,82 @@ class ClaimService {
     await _storage.saveClaims(_claims);
   }
 
+  /// Finder requests additional non-public clarifying evidence from claimant
+  Future<void> requestMoreInfo({
+    required String claimId,
+    required AppUser reviewer,
+    required String requestMessage,
+  }) async {
+    final claimIndex = _claims.indexWhere((c) => c.id == claimId);
+    if (claimIndex == -1) throw Exception('Claim not found.');
+
+    final claim = _claims[claimIndex];
+    final item = _itemService.getItemById(claim.itemId);
+    if (item == null) throw Exception('Associated item not found.');
+
+    if (item.reporterId != reviewer.id && !reviewer.isModerator) {
+      throw Exception(
+        'Unauthorized: Only the item reporter or a moderator can request more info.',
+      );
+    }
+
+    final now = DateTime.now();
+    _claims[claimIndex] = claim.copyWith(
+      status: ClaimStatus.moreInfoNeeded,
+      moreInfoRequest: requestMessage.trim(),
+      updatedAt: now,
+    );
+
+    await _storage.saveClaims(_claims);
+  }
+
+  /// Claimant responds to finder's request for additional evidence
+  Future<void> respondToMoreInfo({
+    required String claimId,
+    required AppUser claimant,
+    required String responseMessage,
+  }) async {
+    final claimIndex = _claims.indexWhere((c) => c.id == claimId);
+    if (claimIndex == -1) throw Exception('Claim not found.');
+
+    final claim = _claims[claimIndex];
+    if (claim.claimantId != claimant.id) {
+      throw Exception('Unauthorized: You can only respond to your own claim.');
+    }
+
+    final now = DateTime.now();
+    _claims[claimIndex] = claim.copyWith(
+      status: ClaimStatus.underReview,
+      moreInfoResponse: responseMessage.trim(),
+      updatedAt: now,
+    );
+
+    await _storage.saveClaims(_claims);
+  }
+
+  /// Claimant voluntarily withdraws a pending claim
+  Future<void> withdrawClaim({
+    required String claimId,
+    required AppUser claimant,
+  }) async {
+    final claimIndex = _claims.indexWhere((c) => c.id == claimId);
+    if (claimIndex == -1) throw Exception('Claim not found.');
+
+    final claim = _claims[claimIndex];
+    if (claim.claimantId != claimant.id) {
+      throw Exception('Unauthorized: You can only withdraw your own claim.');
+    }
+
+    final now = DateTime.now();
+    _claims[claimIndex] = claim.copyWith(
+      status: ClaimStatus.withdrawn,
+      rejectionReason: 'Withdrawn by claimant.',
+      updatedAt: now,
+    );
+
+    await _storage.saveClaims(_claims);
+  }
+
   /// Verifies physical handover using the 6-digit OTP presented in-person
   Future<bool> verifyAndCompleteHandover({
     required String itemId,

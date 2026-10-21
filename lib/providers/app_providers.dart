@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/models/user_model.dart';
@@ -96,6 +97,37 @@ class OfflineModeNotifier extends Notifier<bool> {
 
 final offlineModeProvider = NotifierProvider<OfflineModeNotifier, bool>(
   OfflineModeNotifier.new,
+);
+
+// Theme Mode Notifier & Provider
+class ThemeModeNotifier extends Notifier<ThemeMode> {
+  @override
+  ThemeMode build() {
+    final storage = ref.watch(localStorageServiceProvider);
+    final savedMode = storage.getThemeMode();
+    if (savedMode == 'dark') return ThemeMode.dark;
+    if (savedMode == 'light') return ThemeMode.light;
+    return ThemeMode.system;
+  }
+
+  Future<void> setThemeMode(ThemeMode mode) async {
+    final storage = ref.read(localStorageServiceProvider);
+    state = mode;
+    await storage.saveThemeMode(mode.name);
+  }
+
+  Future<void> toggleTheme(BuildContext context) async {
+    final isCurrentlyDark =
+        state == ThemeMode.dark ||
+        (state == ThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.dark);
+    final newMode = isCurrentlyDark ? ThemeMode.light : ThemeMode.dark;
+    await setThemeMode(newMode);
+  }
+}
+
+final themeModeProvider = NotifierProvider<ThemeModeNotifier, ThemeMode>(
+  ThemeModeNotifier.new,
 );
 
 // Outbox Count Provider
@@ -317,6 +349,49 @@ class ClaimsNotifier extends Notifier<List<ClaimModel>> {
     await ref
         .read(claimServiceProvider)
         .rejectClaim(claimId: claimId, reviewer: reviewer, reason: reason);
+    state = ref.read(claimServiceProvider).allClaims;
+    ref.read(itemsListProvider.notifier).refresh();
+  }
+
+  Future<void> requestMoreInfo({
+    required String claimId,
+    required AppUser reviewer,
+    required String requestMessage,
+  }) async {
+    await ref
+        .read(claimServiceProvider)
+        .requestMoreInfo(
+          claimId: claimId,
+          reviewer: reviewer,
+          requestMessage: requestMessage,
+        );
+    state = ref.read(claimServiceProvider).allClaims;
+    ref.read(itemsListProvider.notifier).refresh();
+  }
+
+  Future<void> respondToMoreInfo({
+    required String claimId,
+    required AppUser claimant,
+    required String responseMessage,
+  }) async {
+    await ref
+        .read(claimServiceProvider)
+        .respondToMoreInfo(
+          claimId: claimId,
+          claimant: claimant,
+          responseMessage: responseMessage,
+        );
+    state = ref.read(claimServiceProvider).allClaims;
+    ref.read(itemsListProvider.notifier).refresh();
+  }
+
+  Future<void> withdrawClaim({
+    required String claimId,
+    required AppUser claimant,
+  }) async {
+    await ref
+        .read(claimServiceProvider)
+        .withdrawClaim(claimId: claimId, claimant: claimant);
     state = ref.read(claimServiceProvider).allClaims;
     ref.read(itemsListProvider.notifier).refresh();
   }

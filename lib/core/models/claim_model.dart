@@ -1,4 +1,12 @@
-enum ClaimStatus { pending, approved, rejected, handedOver }
+enum ClaimStatus {
+  pending,
+  underReview,
+  moreInfoNeeded,
+  approved,
+  rejected,
+  handedOver,
+  withdrawn,
+}
 
 class ClaimModel {
   final String id;
@@ -15,6 +23,8 @@ class ClaimModel {
 
   final ClaimStatus status;
   final String? rejectionReason;
+  final String? moreInfoRequest;
+  final String? moreInfoResponse;
 
   // 6-digit plain OTP generated upon approval, visible only to claimant.
   // The finder validates this token before physically handing over the item.
@@ -34,15 +44,40 @@ class ClaimModel {
     this.proofImageUrl,
     this.status = ClaimStatus.pending,
     this.rejectionReason,
+    this.moreInfoRequest,
+    this.moreInfoResponse,
     this.handoverCode,
     required this.createdAt,
     required this.updatedAt,
   });
 
   bool get isPending => status == ClaimStatus.pending;
+  bool get isUnderReview => status == ClaimStatus.underReview;
+  bool get isMoreInfoNeeded => status == ClaimStatus.moreInfoNeeded;
   bool get isApproved => status == ClaimStatus.approved;
   bool get isRejected => status == ClaimStatus.rejected;
   bool get isHandedOver => status == ClaimStatus.handedOver;
+  bool get isWithdrawn => status == ClaimStatus.withdrawn;
+  bool get isTerminal => isRejected || isHandedOver || isWithdrawn;
+
+  String get displayStatus {
+    switch (status) {
+      case ClaimStatus.pending:
+        return 'Pending Review';
+      case ClaimStatus.underReview:
+        return 'Under Review';
+      case ClaimStatus.moreInfoNeeded:
+        return 'More Info Required';
+      case ClaimStatus.approved:
+        return 'Approved — OTP Ready';
+      case ClaimStatus.rejected:
+        return 'Claim Rejected';
+      case ClaimStatus.handedOver:
+        return 'Item Returned';
+      case ClaimStatus.withdrawn:
+        return 'Claim Withdrawn';
+    }
+  }
 
   Map<String, dynamic> toMap() {
     return {
@@ -56,6 +91,8 @@ class ClaimModel {
       'proofImageUrl': proofImageUrl,
       'status': status.name,
       'rejectionReason': rejectionReason,
+      'moreInfoRequest': moreInfoRequest,
+      'moreInfoResponse': moreInfoResponse,
       'handoverCode': handoverCode,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
@@ -77,6 +114,8 @@ class ClaimModel {
         orElse: () => ClaimStatus.pending,
       ),
       rejectionReason: map['rejectionReason'],
+      moreInfoRequest: map['moreInfoRequest'],
+      moreInfoResponse: map['moreInfoResponse'],
       handoverCode: map['handoverCode'],
       createdAt: map['createdAt'] != null
           ? DateTime.parse(map['createdAt'])
@@ -98,6 +137,8 @@ class ClaimModel {
     String? proofImageUrl,
     ClaimStatus? status,
     String? rejectionReason,
+    String? moreInfoRequest,
+    String? moreInfoResponse,
     String? handoverCode,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -113,6 +154,8 @@ class ClaimModel {
       proofImageUrl: proofImageUrl ?? this.proofImageUrl,
       status: status ?? this.status,
       rejectionReason: rejectionReason ?? this.rejectionReason,
+      moreInfoRequest: moreInfoRequest ?? this.moreInfoRequest,
+      moreInfoResponse: moreInfoResponse ?? this.moreInfoResponse,
       handoverCode: handoverCode ?? this.handoverCode,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,

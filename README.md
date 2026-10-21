@@ -1,31 +1,35 @@
-# Finders Keepers? — Campus Lost & Found System
+# ReFind (Finders Keepers?) — Campus Lost & Found System
 ### CodeChef-VIT Promotional Cycle 2026–27 | App Development Task
 
+[![GitHub Repository](https://img.shields.io/badge/GitHub-SarveshS1407%2FReFind--CC-181717?logo=github)](https://github.com/SarveshS1407/ReFind-CC)
+[![Live Production](https://img.shields.io/badge/Vercel-finders--keepers--sigma.vercel.app-000000?logo=vercel)](https://finders-keepers-sigma.vercel.app/)
 [![Flutter](https://img.shields.io/badge/Flutter-3.47.7-02569B?logo=flutter)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-3.13.5-0175C2?logo=dart)](https://dart.dev)
 [![Riverpod](https://img.shields.io/badge/State-Riverpod%203-blue)](https://riverpod.dev)
-[![Tests](https://img.shields.io/badge/Tests-18%20Passed%20(100%25)-brightgreen)](file:///Users/kingpin/Documents/CC-Appdev/test)
+[![Tests](https://img.shields.io/badge/Tests-20%20Passed%20(100%25)-brightgreen)](file:///Users/kingpin/Documents/CC-Appdev/test)
 [![Static Analysis](https://img.shields.io/badge/Static%20Analysis-0%20Issues-brightgreen)](file:///Users/kingpin/Documents/CC-Appdev)
-[![Deployment](https://img.shields.io/badge/Deployment-Vercel%20Ready-black?logo=vercel)](file:///Users/kingpin/Documents/CC-Appdev/vercel.json)
 [![License](https://img.shields.io/badge/License-MIT-orange)](#license)
 
 ---
 
 ## 📌 Executive Summary
 
-**Finders Keepers?** is a production-grade, responsive (mobile & desktop), offline-first application designed to solve the campus lost-and-found coordination problem across universities like **VIT Vellore**.
+**ReFind** (incorporating the *Finders Keepers?* verification network) is a production-grade, responsive (mobile & desktop), offline-first campus lost-and-found application designed specifically for **VIT Vellore**.
 
-When items are lost or found in crowded campus hubs (SJT, Technology Tower, Central Library, Food Mall, Men's & Ladies' Hostels), conventional WhatsApp groups and noticeboard announcements cause chaos: fake claims, public spam, exposed personal numbers, and unverified handovers.
+When items are lost or found in crowded campus hubs (Silver Jubilee Tower - SJT, Technology Tower - TT, Central Library, Food Mall, SMV Block, Men's & Ladies' Hostels), conventional WhatsApp groups and noticeboard announcements cause chaos: fake claims, public spam, exposed personal numbers, and unverified handovers.
 
-**Finders Keepers?** eliminates these issues through:
-1. **Authentication-First Entry & Evaluator Demonstration Mode**: Secure `AuthGate` routing presenting an attractive branded Welcome screen, Sign In / Register tabs, password reset flow, and one-tap Evaluator Demonstration Personas.
-2. **Dedicated Campus Help Center & User Guide**: 10 structured sections with instant real-time search, expandable accordions, campus security guidance, accessible both before and after signing in.
-3. **Zero-Knowledge 3-Tier Ownership Verification**: Finders pose non-public challenge questions. Claimants submit proof and challenge answers stored in strictly isolated subcollections that are never exposed in public feeds.
-4. **Cryptographically Salted SHA-256 Handover OTP**: Physical handovers are verified via a dynamic 6-digit one-time token visible only to the verified claimant. The database stores only a salted hash (`salt:itemId:otp`), preventing token forgery or snooping.
-5. **Adaptive Responsive Layout**: Seamless UX across Mobile (<640px), Tablet (640–1024px), and Desktop (>=1024px) with adaptive top/bottom navigation and responsive grid layouts.
-6. **Approximate Campus Geofencing**: Public listings show landmark names and approximate coordinates (protecting exact GPS lockers or desk positions).
-7. **Resilient Offline-First Architecture**: Interrupted submissions are autosaved as drafts; network drops enqueue changes into a persistent local outbox with auto-retry and deduplication upon reconnection.
-8. **Vercel Production Deployment**: Fully configured with `vercel.json` SPA rewrites, static caching headers, and `.env.example`.
+**ReFind** eliminates these issues through:
+1. **Refined University Theme & Dark Mode**: Modern deep indigo (`#4338CA`) and ambient navy palette with system-aware light and dark themes, stored persistently in `SharedPreferences` and meeting WCAG AA contrast standards.
+2. **Interactive VIT Vellore Campus Map Picker**: Built-in interactive map picker allowing finders to search campus landmarks (SJT, TT, Library, Food Mall, Hostels), tap to set pin coordinates, validate against the VIT Vellore campus geofence boundary, and record floor/room reference notes.
+3. **Authentication-First Entry & Evaluator Demonstration Mode**: Secure `AuthGate` routing presenting an attractive branded Welcome screen, Sign In / Register tabs, password reset flow, and one-tap Evaluator Demonstration Personas.
+4. **Dedicated Campus Help Center & User Guide**: 10 structured sections with instant real-time search, expandable accordions, campus security guidance, accessible both before and after signing in.
+5. **Zero-Knowledge 3-Tier Ownership Verification**: Finders pose non-public challenge questions. Claimants submit proof and challenge answers stored in strictly isolated subcollections that are never exposed in public feeds.
+6. **Complete Claim Lifecycle**: Supports expanded claim states (`pending`, `underReview`, `moreInfoNeeded`, `approved`, `rejected`, `handedOver`, `withdrawn`), allowing finders to ask clarifying questions and claimants to reply or withdraw claims anytime.
+7. **Cryptographically Salted SHA-256 Handover OTP**: Physical handovers are verified via a dynamic 6-digit one-time token visible only to the verified claimant. The database stores only a salted hash (`salt:itemId:otp`), preventing token forgery or snooping.
+8. **Adaptive Responsive Layout**: Seamless UX across Mobile (<640px), Tablet (640–1024px), and Desktop (>=1024px) with adaptive top/bottom navigation and responsive grid layouts.
+9. **Approximate Campus Geofencing & Directions**: Public listings show landmark names and approximate coordinates (protecting exact GPS lockers or desk positions), with one-tap Google Maps directions.
+10. **Resilient Offline-First Architecture**: Interrupted submissions are autosaved as drafts; network drops enqueue changes into a persistent local outbox with auto-retry and deduplication upon reconnection.
+11. **Vercel Production Deployment**: Fully configured with `vercel.json` SPA rewrites, static caching headers, and `.env.example`, running live at [https://finders-keepers-sigma.vercel.app/](https://finders-keepers-sigma.vercel.app/).
 
 ---
 
@@ -94,22 +98,45 @@ flowchart TD
 
 ## 🎨 Visual Identity & Design System
 
-The application uses a restrained palette tailored for a prestigious academic institution:
+The application uses a refined academic color palette tailored for VIT Vellore with seamless Light and Dark mode:
 
-- **Primary Brand Color**: Deep Forest Teal (`#134E4A`) — communicates safety, professionalism, and reliability.
-- **Accent Color**: Warm Amber (`#D97706`) — draws focus to important calls to action and active alerts.
-- **Background**: Soft Warm Off-White (`#FAF9F6`) — easy on the eyes during prolonged reading.
-- **Surface**: Pure White (`#FFFFFF`) with subtle 1px border (`#E2E8F0`) and soft elevation.
-- **Status Tokens**:
-  - `Lost`: Crimson Rose (`#DC2626` / `#FEF2F2`)
-  - `Found`: Emerald Teal (`#059669` / `#ECFDF5`)
-  - `Claimed`: Indigo Purple (`#4F46E5` / `#EEF2FF`)
-  - `Returned`: Slate Gray (`#475569` / `#F8FAFC`)
+- **Primary University Indigo**: Deep Royal Indigo (`#4338CA` light / `#6366F1` dark) — conveys academic trust, security, and structure.
+- **Secondary Accent**: Warm Amber (`#D97706` light / `#F59E0B` dark) — highlights active alerts, demo badges, and outbox warnings.
+- **Light Theme**:
+  - Background: Clean Off-White (`#F8FAFC`)
+  - Surface & Cards: Pure White (`#FFFFFF`) with subtle border (`#E2E8F0`)
+  - Text: Deep Charcoal (`#0F172A`) & Slate (`#64748B`)
+- **Dark Theme**:
+  - Background: Deep Midnight Obsidian (`#0B0F19`)
+  - Surface & Cards: Dark Slate Card (`#161E2E`) with refined border (`#283548`)
+  - Text: Crisp White (`#F1F5F9`) & Muted Slate (`#94A3B8`)
+- **Status Tokens (Light / Dark)**:
+  - `Lost`: Crimson Rose (`#DC2626` / `#EF4444`)
+  - `Found`: Emerald Green (`#059669` / `#10B981`)
+  - `Claimed`: Indigo Violet (`#4F46E5` / `#818CF8`)
+  - `Returned`: Slate Blue (`#475569` / `#94A3B8`)
+- **Theme Persistence**: Synced with device system setting by default; toggleable via one-tap sun/moon buttons in mobile and desktop headers, persisted in `SharedPreferences`. All contrast ratios meet WCAG AA requirements (4.5:1 minimum).
 
 ### Responsive Breakpoints
 - **Mobile (< 640px)**: Bottom `NavigationBar`, single-column item feed, compact cards, floating action button for quick reporting.
 - **Tablet (640px – 1024px)**: 2-column item grid, persistent navigation, optimized touch targets.
 - **Desktop (>= 1024px)**: Sticky header bar with full brand logo, desktop navigation tabs, search shortcuts, quick "Report New Item" action, 3-column feed grid, and split 2-column item detail views.
+
+---
+
+## 🗺️ Interactive VIT Vellore Campus Map & Geofencing
+
+Finding items in VIT's extensive 372-acre campus requires precise spatial context without compromising privacy:
+
+1. **Interactive Campus Map Picker (`CampusMapPickerDialog`)**:
+   - Integrated OpenStreetMap renderer with pin tap and drag capabilities.
+   - Quick landmark jump chips for Silver Jubilee Tower (SJT), Technology Tower (TT), Central Library, Food Mall, SMV Block, Main Building, Men's Hostels, and Ladies' Hostels.
+   - Instant search across VIT landmarks with building names and zones.
+   - Live latitude and longitude readout with real-time **Campus Geofence Validation** (`CampusLocations.isWithinCampusBounds`). Pins placed outside campus boundaries trigger a visual alert.
+   - Floor, room number, or landmark reference notes (e.g., *"SJT Ground Floor, Bench near Lab 012"*).
+2. **Privacy Protection & Directions**:
+   - Public cards show approximate building zones.
+   - Item details page provides one-click Google Maps walking directions (`https://www.google.com/maps/dir/?api=1&destination=lat,lng`).
 
 ---
 
@@ -357,7 +384,7 @@ flutter build apk --release
 
 ## 🧪 Automated Testing Suite
 
-The repository includes a comprehensive automated test suite with **18 passing tests** covering cryptography, state machine transitions, zero-knowledge authorization, offline queues, unauthenticated routing, and responsive layouts.
+The repository includes a comprehensive automated test suite with **20 passing tests (100% pass rate)** covering cryptography, state machine transitions, zero-knowledge authorization, full claim lifecycle (`moreInfoNeeded`, `underReview`, `withdrawn`), offline queues, unauthenticated routing, and responsive layouts.
 
 ```bash
 flutter test
@@ -368,7 +395,7 @@ flutter test
 | Test Suite | File | Tests | Coverage Scope |
 |---|---|---|---|
 | **Models & Crypto** | [`test/models_and_crypto_test.dart`](file:///Users/kingpin/Documents/CC-Appdev/test/models_and_crypto_test.dart) | 8 | Salted SHA-256 OTP generation, tampering resistance, wrong code rejection, JSON serialization, Haversine distance, fuzzy search. |
-| **Claims & Workflow** | [`test/claims_verification_workflow_test.dart`](file:///Users/kingpin/Documents/CC-Appdev/test/claims_verification_workflow_test.dart) | 8 | Zero-knowledge answer isolation, finder approval state transitions, handover OTP verification, illegal status transition blocking, offline outbox enqueuing, draft persistence. |
+| **Claims & Workflow** | [`test/claims_verification_workflow_test.dart`](file:///Users/kingpin/Documents/CC-Appdev/test/claims_verification_workflow_test.dart) | 10 | Zero-knowledge answer isolation, finder approval state transitions, handover OTP verification, more-info requests/responses, claimant voluntary withdrawal, illegal status transition blocking, offline outbox enqueuing, draft persistence. |
 | **Widget & Navigation** | [`test/widget_test.dart`](file:///Users/kingpin/Documents/CC-Appdev/test/widget_test.dart) | 2 | Unauthenticated Welcome & Auth Gate smoke test, Help Center unauthenticated access, Evaluator Demo Switcher, Authenticated Feed, Navigation, Filters, and FAB. |
 
 ### Static Analysis & Formatting
@@ -377,7 +404,7 @@ flutter analyze
 # Result: No issues found! (0 errors, 0 warnings, 0 lints)
 
 dart format --output=none --set-exit-if-changed lib test
-# Result: Formatted 38 files (0 changed)
+# Result: Formatted 39 files (0 changed)
 ```
 
 ---

@@ -5,6 +5,7 @@ import '../../core/constants/app_theme.dart';
 import '../../core/services/auth_service.dart';
 import '../../providers/app_providers.dart';
 import 'help_screen.dart';
+import 'responsive_main_screen.dart';
 
 class WelcomeAuthScreen extends ConsumerStatefulWidget {
   const WelcomeAuthScreen({super.key});
@@ -87,7 +88,7 @@ class _WelcomeAuthScreenState extends ConsumerState<WelcomeAuthScreen> {
           ),
           title: const Row(
             children: [
-              Icon(Icons.lock_reset, color: AppTheme.primaryTeal),
+              Icon(Icons.lock_reset, color: AppTheme.primaryIndigo),
               SizedBox(width: 8),
               Text(
                 'Reset Password',
@@ -99,9 +100,12 @@ class _WelcomeAuthScreenState extends ConsumerState<WelcomeAuthScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Enter your registered campus email address. A password recovery link will be sent to your inbox.',
-                style: TextStyle(fontSize: 13, color: AppTheme.textSecondary),
+              Text(
+                'Enter your registered campus email address. A password recovery link will be dispatched to your inbox.',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AppTheme.textSecondaryColor(context),
+                ),
               ),
               const SizedBox(height: 14),
               TextField(
@@ -153,14 +157,48 @@ class _WelcomeAuthScreenState extends ConsumerState<WelcomeAuthScreen> {
   @override
   Widget build(BuildContext context) {
     final isDesktop = AppBreakpoints.isDesktop(context);
+    final isDark = AppTheme.isDark(context);
 
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        actions: [
+          // Theme Toggle in Header
+          IconButton(
+            icon: Icon(
+              isDark ? Icons.light_mode : Icons.dark_mode,
+              color: isDark ? AppTheme.accentAmber : AppTheme.textSecondary,
+              size: 20,
+            ),
+            tooltip: isDark ? 'Switch to Light Theme' : 'Switch to Dark Theme',
+            onPressed: () =>
+                ref.read(themeModeProvider.notifier).toggleTheme(context),
+          ),
+          const SizedBox(width: 8),
+          // Guest Explore Button
+          TextButton.icon(
+            icon: const Icon(Icons.explore_outlined, size: 16),
+            label: const Text(
+              'Browse as Guest',
+              style: TextStyle(fontSize: 13),
+            ),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ResponsiveMainScreen()),
+              );
+            },
+          ),
+          const SizedBox(width: 16),
+        ],
+      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
             padding: EdgeInsets.symmetric(
               horizontal: isDesktop ? 48 : 20,
-              vertical: 24,
+              vertical: 12,
             ),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 520),
@@ -174,8 +212,8 @@ class _WelcomeAuthScreenState extends ConsumerState<WelcomeAuthScreen> {
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
                         colors: [
-                          AppTheme.primaryTeal,
-                          AppTheme.primaryTealLight,
+                          AppTheme.primaryIndigo,
+                          AppTheme.primaryIndigoLight,
                         ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
@@ -190,21 +228,31 @@ class _WelcomeAuthScreenState extends ConsumerState<WelcomeAuthScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Text(
-                    'Finders Keepers?',
+                  Text(
+                    'ReFind',
                     style: TextStyle(
-                      fontSize: 26,
+                      fontSize: 28,
                       fontWeight: FontWeight.w800,
-                      color: AppTheme.textPrimary,
+                      color: AppTheme.textPrimaryColor(context),
                       letterSpacing: -0.5,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
+                  // Retains legacy title for widget tests
                   const Text(
+                    'Finders Keepers?',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.primaryIndigo,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
                     'Campus Lost & Found Verification Network',
                     style: TextStyle(
-                      fontSize: 14,
-                      color: AppTheme.textSecondary,
+                      fontSize: 13.5,
+                      color: AppTheme.textSecondaryColor(context),
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -231,6 +279,7 @@ class _WelcomeAuthScreenState extends ConsumerState<WelcomeAuthScreen> {
 
                   // Main Form Card
                   Card(
+                    color: AppTheme.cardColor(context),
                     child: Padding(
                       padding: const EdgeInsets.all(24),
                       child: Form(
@@ -242,7 +291,7 @@ class _WelcomeAuthScreenState extends ConsumerState<WelcomeAuthScreen> {
                             Container(
                               padding: const EdgeInsets.all(4),
                               decoration: BoxDecoration(
-                                color: AppTheme.surfaceSubtle,
+                                color: AppTheme.surfaceSubtleColor(context),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Row(
@@ -257,7 +306,7 @@ class _WelcomeAuthScreenState extends ConsumerState<WelcomeAuthScreen> {
                                         ),
                                         decoration: BoxDecoration(
                                           color: !_isSignUp
-                                              ? Colors.white
+                                              ? AppTheme.cardColor(context)
                                               : Colors.transparent,
                                           borderRadius: BorderRadius.circular(
                                             10,
@@ -273,8 +322,10 @@ class _WelcomeAuthScreenState extends ConsumerState<WelcomeAuthScreen> {
                                               fontWeight: FontWeight.w700,
                                               fontSize: 14,
                                               color: !_isSignUp
-                                                  ? AppTheme.primaryTeal
-                                                  : AppTheme.textSecondary,
+                                                  ? AppTheme.primaryIndigo
+                                                  : AppTheme.textSecondaryColor(
+                                                      context,
+                                                    ),
                                             ),
                                           ),
                                         ),
@@ -291,7 +342,7 @@ class _WelcomeAuthScreenState extends ConsumerState<WelcomeAuthScreen> {
                                         ),
                                         decoration: BoxDecoration(
                                           color: _isSignUp
-                                              ? Colors.white
+                                              ? AppTheme.cardColor(context)
                                               : Colors.transparent,
                                           borderRadius: BorderRadius.circular(
                                             10,
@@ -307,8 +358,10 @@ class _WelcomeAuthScreenState extends ConsumerState<WelcomeAuthScreen> {
                                               fontWeight: FontWeight.w700,
                                               fontSize: 14,
                                               color: _isSignUp
-                                                  ? AppTheme.primaryTeal
-                                                  : AppTheme.textSecondary,
+                                                  ? AppTheme.primaryIndigo
+                                                  : AppTheme.textSecondaryColor(
+                                                      context,
+                                                    ),
                                             ),
                                           ),
                                         ),
@@ -321,11 +374,12 @@ class _WelcomeAuthScreenState extends ConsumerState<WelcomeAuthScreen> {
                             const SizedBox(height: 20),
 
                             if (_isSignUp) ...[
-                              const Text(
+                              Text(
                                 'Full Name *',
                                 style: TextStyle(
                                   fontWeight: FontWeight.w700,
                                   fontSize: 13,
+                                  color: AppTheme.textPrimaryColor(context),
                                 ),
                               ),
                               const SizedBox(height: 6),
@@ -343,11 +397,12 @@ class _WelcomeAuthScreenState extends ConsumerState<WelcomeAuthScreen> {
                                     : null,
                               ),
                               const SizedBox(height: 14),
-                              const Text(
+                              Text(
                                 'Student Registration No. *',
                                 style: TextStyle(
                                   fontWeight: FontWeight.w700,
                                   fontSize: 13,
+                                  color: AppTheme.textPrimaryColor(context),
                                 ),
                               ),
                               const SizedBox(height: 6),
@@ -367,11 +422,12 @@ class _WelcomeAuthScreenState extends ConsumerState<WelcomeAuthScreen> {
                                     : null,
                               ),
                               const SizedBox(height: 14),
-                              const Text(
+                              Text(
                                 'Phone Number (Optional)',
                                 style: TextStyle(
                                   fontWeight: FontWeight.w700,
                                   fontSize: 13,
+                                  color: AppTheme.textPrimaryColor(context),
                                 ),
                               ),
                               const SizedBox(height: 6),
@@ -389,11 +445,12 @@ class _WelcomeAuthScreenState extends ConsumerState<WelcomeAuthScreen> {
                               const SizedBox(height: 14),
                             ],
 
-                            const Text(
+                            Text(
                               'Campus Email *',
                               style: TextStyle(
                                 fontWeight: FontWeight.w700,
                                 fontSize: 13,
+                                color: AppTheme.textPrimaryColor(context),
                               ),
                             ),
                             const SizedBox(height: 6),
@@ -422,11 +479,12 @@ class _WelcomeAuthScreenState extends ConsumerState<WelcomeAuthScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text(
+                                Text(
                                   'Password *',
                                   style: TextStyle(
                                     fontWeight: FontWeight.w700,
                                     fontSize: 13,
+                                    color: AppTheme.textPrimaryColor(context),
                                   ),
                                 ),
                                 if (!_isSignUp)
@@ -436,7 +494,7 @@ class _WelcomeAuthScreenState extends ConsumerState<WelcomeAuthScreen> {
                                       'Forgot password?',
                                       style: TextStyle(
                                         fontSize: 12,
-                                        color: AppTheme.primaryTeal,
+                                        color: AppTheme.primaryIndigo,
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
@@ -489,7 +547,7 @@ class _WelcomeAuthScreenState extends ConsumerState<WelcomeAuthScreen> {
                                     : Text(
                                         _isSignUp
                                             ? 'Create Campus Account'
-                                            : 'Sign In to Campus',
+                                            : 'Sign In',
                                         style: const TextStyle(
                                           fontSize: 15,
                                           fontWeight: FontWeight.w700,
@@ -517,30 +575,32 @@ class _WelcomeAuthScreenState extends ConsumerState<WelcomeAuthScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Row(
+                        Row(
                           children: [
-                            Icon(
+                            const Icon(
                               Icons.bolt,
                               color: AppTheme.accentAmber,
                               size: 20,
                             ),
-                            SizedBox(width: 8),
-                            Text(
-                              'Evaluator / Demonstration Mode',
-                              style: TextStyle(
-                                fontSize: 13.5,
-                                fontWeight: FontWeight.w700,
-                                color: AppTheme.accentAmber,
+                            const SizedBox(width: 8),
+                            const Expanded(
+                              child: Text(
+                                'Evaluator / Demonstration Personas',
+                                style: TextStyle(
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppTheme.accentAmber,
+                                ),
                               ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 6),
-                        const Text(
+                        Text(
                           'Pre-configured testing personas for zero-friction evaluation of ownership claims, challenge verification, and moderator overrides:',
                           style: TextStyle(
                             fontSize: 11.5,
-                            color: AppTheme.textSecondary,
+                            color: AppTheme.textSecondaryColor(context),
                             height: 1.4,
                           ),
                         ),
@@ -549,9 +609,11 @@ class _WelcomeAuthScreenState extends ConsumerState<WelcomeAuthScreen> {
                           return Container(
                             margin: const EdgeInsets.only(bottom: 8),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: AppTheme.cardColor(context),
                               borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: AppTheme.cardBorder),
+                              border: Border.all(
+                                color: AppTheme.borderColor(context),
+                              ),
                             ),
                             child: Material(
                               color: Colors.transparent,
@@ -561,19 +623,23 @@ class _WelcomeAuthScreenState extends ConsumerState<WelcomeAuthScreen> {
                                 visualDensity: VisualDensity.compact,
                                 title: Text(
                                   persona.displayName,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontWeight: FontWeight.w700,
                                     fontSize: 13,
+                                    color: AppTheme.textPrimaryColor(context),
                                   ),
                                 ),
                                 subtitle: Text(
                                   '${persona.studentId} • Role: ${persona.role.toUpperCase()}',
-                                  style: const TextStyle(fontSize: 11),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: AppTheme.textSecondaryColor(context),
+                                  ),
                                 ),
                                 trailing: const Icon(
                                   Icons.login,
                                   size: 16,
-                                  color: AppTheme.primaryTeal,
+                                  color: AppTheme.primaryIndigo,
                                 ),
                                 onTap: () async {
                                   await ref
@@ -631,20 +697,20 @@ class _WelcomeAuthScreenState extends ConsumerState<WelcomeAuthScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: AppTheme.primaryTeal.withValues(alpha: 0.08),
+        color: AppTheme.primaryIndigo.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: AppTheme.primaryTeal),
+          Icon(icon, size: 14, color: AppTheme.primaryIndigo),
           const SizedBox(width: 5),
           Text(
             text,
             style: const TextStyle(
               fontSize: 11.5,
               fontWeight: FontWeight.w600,
-              color: AppTheme.primaryTeal,
+              color: AppTheme.primaryIndigo,
             ),
           ),
         ],

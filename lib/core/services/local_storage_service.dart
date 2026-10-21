@@ -14,6 +14,7 @@ class LocalStorageService {
   static const String _keyOutbox = 'fk_offline_outbox_v1';
   static const String _keyUser = 'fk_current_user_v1';
   static const String _keySimulateOffline = 'fk_simulate_offline_v1';
+  static const String _keyThemeMode = 'fk_theme_mode_v1';
 
   final SharedPreferences _prefs;
 
@@ -31,6 +32,15 @@ class LocalStorageService {
 
   Future<void> setSimulatedOffline(bool value) async {
     await _prefs.setBool(_keySimulateOffline, value);
+  }
+
+  // --- Theme Mode ---
+  String? getThemeMode() {
+    return _prefs.getString(_keyThemeMode);
+  }
+
+  Future<void> saveThemeMode(String mode) async {
+    await _prefs.setString(_keyThemeMode, mode);
   }
 
   // --- User Session ---

@@ -23,6 +23,7 @@ class _ItemCardState extends State<ItemCard> {
   Widget build(BuildContext context) {
     final item = widget.item;
     final category = CategoryConstants.findById(item.category);
+    final isDark = AppTheme.isDark(context);
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -30,15 +31,17 @@ class _ItemCardState extends State<ItemCard> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         decoration: BoxDecoration(
-          color: AppTheme.surfaceWhite,
+          color: AppTheme.cardColor(context),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: _isHovered ? AppTheme.primaryTeal : AppTheme.cardBorder,
+            color: _isHovered
+                ? AppTheme.primaryIndigo
+                : AppTheme.borderColor(context),
             width: _isHovered ? 1.5 : 1.0,
           ),
           boxShadow: _isHovered
-              ? AppTheme.elevatedShadow
-              : AppTheme.subtleCardShadow,
+              ? (isDark ? AppTheme.darkSubtleShadow : AppTheme.elevatedShadow)
+              : (isDark ? const [] : AppTheme.subtleCardShadow),
         ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -50,7 +53,7 @@ class _ItemCardState extends State<ItemCard> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Top Badges & Reward Tag (Wraps gracefully on narrow card viewports)
+                // Top Badges & Reward Tag
                 Wrap(
                   spacing: 6,
                   runSpacing: 4,
@@ -70,7 +73,7 @@ class _ItemCardState extends State<ItemCard> {
                           vertical: 3,
                         ),
                         decoration: BoxDecoration(
-                          color: AppTheme.accentAmber.withValues(alpha: 0.1),
+                          color: AppTheme.accentAmber.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(6),
                           border: Border.all(color: AppTheme.accentAmber),
                         ),
@@ -96,13 +99,21 @@ class _ItemCardState extends State<ItemCard> {
                       height: 44,
                       decoration: BoxDecoration(
                         color: item.isLost
-                            ? AppTheme.statusLostBg
-                            : AppTheme.statusFoundBg,
+                            ? (isDark
+                                  ? AppTheme.statusLostBgDark
+                                  : AppTheme.statusLostBgLight)
+                            : (isDark
+                                  ? AppTheme.statusFoundBgDark
+                                  : AppTheme.statusFoundBgLight),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: item.isLost
-                              ? AppTheme.statusLostBorder
-                              : AppTheme.statusFoundBorder,
+                              ? (isDark
+                                    ? AppTheme.statusLostBorderDark
+                                    : AppTheme.statusLostBorderLight)
+                              : (isDark
+                                    ? AppTheme.statusFoundBorderDark
+                                    : AppTheme.statusFoundBorderLight),
                         ),
                       ),
                       child: Icon(
@@ -120,10 +131,10 @@ class _ItemCardState extends State<ItemCard> {
                         children: [
                           Text(
                             item.title,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 15.5,
                               fontWeight: FontWeight.w700,
-                              color: AppTheme.textPrimary,
+                              color: AppTheme.textPrimaryColor(context),
                               height: 1.25,
                             ),
                             maxLines: 2,
@@ -132,10 +143,10 @@ class _ItemCardState extends State<ItemCard> {
                           const SizedBox(height: 3),
                           Text(
                             category.name,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
-                              color: AppTheme.textSecondary,
+                              color: AppTheme.textSecondaryColor(context),
                             ),
                           ),
                         ],
@@ -148,9 +159,9 @@ class _ItemCardState extends State<ItemCard> {
                 // Description snippet
                 Text(
                   item.description,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
-                    color: AppTheme.textSecondary,
+                    color: AppTheme.textSecondaryColor(context),
                     height: 1.4,
                   ),
                   maxLines: 2,
@@ -161,35 +172,35 @@ class _ItemCardState extends State<ItemCard> {
                 // Bottom Info: Approximate Campus Location & Time
                 Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.location_on_outlined,
                       size: 15,
-                      color: AppTheme.textSecondary,
+                      color: AppTheme.textSecondaryColor(context),
                     ),
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
                         '${item.campusLocationName} (Approximate)',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11.5,
                           fontWeight: FontWeight.w500,
-                          color: AppTheme.textSecondary,
+                          color: AppTheme.textSecondaryColor(context),
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     const SizedBox(width: 8),
-                    const Icon(
+                    Icon(
                       Icons.access_time,
                       size: 13,
-                      color: AppTheme.textMuted,
+                      color: AppTheme.textMutedColor(context),
                     ),
                     const SizedBox(width: 4),
                     Text(
                       Formatters.formatDate(item.dateReported),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11.5,
-                        color: AppTheme.textSecondary,
+                        color: AppTheme.textSecondaryColor(context),
                       ),
                     ),
                   ],

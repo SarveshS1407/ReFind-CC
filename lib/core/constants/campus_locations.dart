@@ -126,4 +126,24 @@ class CampusConstants {
       orElse: () => locations.first,
     );
   }
+
+  static bool isWithinCampusBounds(double lat, double lng) {
+    // Geofencing bounding box around VIT Vellore campus
+    return lat >= 12.9580 && lat <= 12.9800 && lng >= 79.1450 && lng <= 79.1720;
+  }
+
+  static CampusLocation findNearest(double lat, double lng) {
+    CampusLocation nearest = locations.first;
+    double minDistance = double.infinity;
+    for (final loc in locations) {
+      final d =
+          (loc.latitude - lat) * (loc.latitude - lat) +
+          (loc.longitude - lng) * (loc.longitude - lng);
+      if (d < minDistance) {
+        minDistance = d;
+        nearest = loc;
+      }
+    }
+    return nearest;
+  }
 }

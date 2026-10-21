@@ -29,11 +29,14 @@ class FindersKeepersApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentUser = ref.watch(currentUserProvider);
+    final themeMode = ref.watch(themeModeProvider);
 
     return MaterialApp(
-      title: 'Finders Keepers? - Campus Lost & Found',
+      title: 'ReFind — VIT Campus Lost & Found',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: themeMode,
       // Authentication-First Entry Flow
       home: currentUser == null
           ? const WelcomeAuthScreen()

@@ -11,6 +11,7 @@ class OfflineBanner extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isOffline = ref.watch(offlineModeProvider);
     final outboxCount = ref.watch(outboxCountProvider);
+    final isDark = AppTheme.isDark(context);
 
     if (!isOffline && outboxCount == 0) {
       return const SizedBox.shrink();
@@ -19,15 +20,19 @@ class OfflineBanner extends ConsumerWidget {
     return Container(
       width: double.infinity,
       color: isOffline
-          ? AppTheme.syncWarningBg
-          : AppTheme.primaryTeal.withValues(alpha: 0.1),
+          ? (isDark ? const Color(0xFF451A03) : AppTheme.syncWarningBg)
+          : (isDark
+                ? AppTheme.surfaceDarkSubtle
+                : AppTheme.primaryIndigo.withValues(alpha: 0.1)),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
           Icon(
             isOffline ? Icons.wifi_off : Icons.cloud_queue,
             size: 18,
-            color: isOffline ? AppTheme.syncWarning : AppTheme.primaryTeal,
+            color: isOffline
+                ? AppTheme.syncWarning
+                : AppTheme.primaryIndigoLight,
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -41,8 +46,10 @@ class OfflineBanner extends ConsumerWidget {
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: isOffline
-                    ? const Color(0xFF92400E)
-                    : AppTheme.primaryTeal,
+                    ? (isDark
+                          ? const Color(0xFFFDE68A)
+                          : const Color(0xFF92400E))
+                    : AppTheme.primaryIndigoLight,
               ),
             ),
           ),
@@ -61,21 +68,9 @@ class OfflineBanner extends ConsumerWidget {
                   );
                 }
               },
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
               child: const Text(
                 'Sync Now',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.primaryTeal,
-                ),
+                style: TextStyle(fontWeight: FontWeight.bold),
               ),
             ),
         ],

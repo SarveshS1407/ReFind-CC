@@ -11,6 +11,8 @@ class LifecycleStepper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = AppTheme.isDark(context);
+
     int currentStep = 0;
     if (status == ItemStatus.lost || status == ItemStatus.found) {
       currentStep = 1;
@@ -46,32 +48,36 @@ class LifecycleStepper extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.cardColor(context),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.cardBorder),
+        border: Border.all(color: AppTheme.borderColor(context)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.timeline, size: 18, color: AppTheme.primaryTeal),
+              const Icon(
+                Icons.timeline,
+                size: 18,
+                color: AppTheme.primaryIndigo,
+              ),
               const SizedBox(width: 8),
-              const Text(
+              Text(
                 'Item Lifecycle Status',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF0F172A),
+                  color: AppTheme.textPrimaryColor(context),
                 ),
               ),
               const Spacer(),
               Text(
                 'Step ${currentStep.clamp(1, 4)} of 4',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF64748B),
+                  color: AppTheme.textSecondaryColor(context),
                 ),
               ),
             ],
@@ -87,7 +93,7 @@ class LifecycleStepper extends StatelessWidget {
                     height: 3,
                     color: isPassed
                         ? AppTheme.statusReturned
-                        : AppTheme.cardBorder,
+                        : AppTheme.borderColor(context),
                   ),
                 );
               }
@@ -104,12 +110,19 @@ class LifecycleStepper extends StatelessWidget {
                 circleBg = AppTheme.statusReturned;
                 iconColor = Colors.white;
               } else if (isCurrent) {
-                circleBg = AppTheme.primaryTeal;
+                circleBg = AppTheme.primaryIndigo;
                 iconColor = Colors.white;
               } else {
-                circleBg = Colors.grey.shade100;
-                iconColor = Colors.grey.shade400;
-                border = Border.all(color: AppTheme.cardBorder, width: 1.5);
+                circleBg = isDark
+                    ? AppTheme.surfaceDarkSubtle
+                    : Colors.grey.shade100;
+                iconColor = isDark
+                    ? AppTheme.textMutedDark
+                    : Colors.grey.shade400;
+                border = Border.all(
+                  color: AppTheme.borderColor(context),
+                  width: 1.5,
+                );
               }
 
               return Container(
@@ -142,8 +155,8 @@ class LifecycleStepper extends StatelessWidget {
                     fontSize: 10,
                     fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w500,
                     color: isCurrent
-                        ? AppTheme.primaryTeal
-                        : const Color(0xFF64748B),
+                        ? AppTheme.primaryIndigoLight
+                        : AppTheme.textSecondaryColor(context),
                   ),
                 ),
               );

@@ -19,6 +19,8 @@ class StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = AppTheme.isDark(context);
+
     if (syncStatus == SyncStatus.queuedLocally) {
       return Container(
         padding: EdgeInsets.symmetric(
@@ -26,7 +28,7 @@ class StatusBadge extends StatelessWidget {
           vertical: compact ? 2 : 4,
         ),
         decoration: BoxDecoration(
-          color: AppTheme.syncWarningBg,
+          color: isDark ? const Color(0xFF451A03) : AppTheme.syncWarningBg,
           borderRadius: BorderRadius.circular(compact ? 6 : 8),
           border: Border.all(
             color: AppTheme.syncWarning.withValues(alpha: 0.5),
@@ -56,19 +58,27 @@ class StatusBadge extends StatelessWidget {
 
     if (type != null) {
       final isLost = type == ItemType.lost;
+      final bg = isLost
+          ? (isDark ? AppTheme.statusLostBgDark : AppTheme.statusLostBgLight)
+          : (isDark ? AppTheme.statusFoundBgDark : AppTheme.statusFoundBgLight);
+      final border = isLost
+          ? (isDark
+                ? AppTheme.statusLostBorderDark
+                : AppTheme.statusLostBorderLight)
+          : (isDark
+                ? AppTheme.statusFoundBorderDark
+                : AppTheme.statusFoundBorderLight);
+      final color = isLost ? AppTheme.statusLost : AppTheme.statusFound;
+
       return Container(
         padding: EdgeInsets.symmetric(
           horizontal: compact ? 6 : 10,
           vertical: compact ? 2 : 4,
         ),
         decoration: BoxDecoration(
-          color: isLost ? AppTheme.statusLostBg : AppTheme.statusFoundBg,
+          color: bg,
           borderRadius: BorderRadius.circular(compact ? 6 : 8),
-          border: Border.all(
-            color: isLost
-                ? AppTheme.statusLost.withValues(alpha: 0.3)
-                : AppTheme.statusFound.withValues(alpha: 0.3),
-          ),
+          border: Border.all(color: border),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -76,13 +86,13 @@ class StatusBadge extends StatelessWidget {
             Icon(
               isLost ? Icons.search : Icons.inventory_2_outlined,
               size: compact ? 11 : 13,
-              color: isLost ? AppTheme.statusLost : AppTheme.statusFound,
+              color: color,
             ),
             const SizedBox(width: 4),
             Text(
               isLost ? 'LOST' : 'FOUND',
               style: TextStyle(
-                color: isLost ? AppTheme.statusLost : AppTheme.statusFound,
+                color: color,
                 fontSize: compact ? 10 : 12,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 0.5,
@@ -95,38 +105,58 @@ class StatusBadge extends StatelessWidget {
 
     if (status != null) {
       Color bg;
+      Color border;
       Color text;
       IconData icon;
       String label;
 
       switch (status!) {
         case ItemStatus.lost:
-          bg = AppTheme.statusLostBg;
+          bg = isDark ? AppTheme.statusLostBgDark : AppTheme.statusLostBgLight;
+          border = isDark
+              ? AppTheme.statusLostBorderDark
+              : AppTheme.statusLostBorderLight;
           text = AppTheme.statusLost;
           icon = Icons.help_outline;
           label = 'Reported Lost';
           break;
         case ItemStatus.found:
-          bg = AppTheme.statusFoundBg;
+          bg = isDark
+              ? AppTheme.statusFoundBgDark
+              : AppTheme.statusFoundBgLight;
+          border = isDark
+              ? AppTheme.statusFoundBorderDark
+              : AppTheme.statusFoundBorderLight;
           text = AppTheme.statusFound;
           icon = Icons.check_circle_outline;
           label = 'Available / Found';
           break;
         case ItemStatus.claimed:
-          bg = AppTheme.statusClaimedBg;
+          bg = isDark
+              ? AppTheme.statusClaimedBgDark
+              : AppTheme.statusClaimedBgLight;
+          border = isDark
+              ? AppTheme.statusClaimedBorderDark
+              : AppTheme.statusClaimedBorderLight;
           text = AppTheme.statusClaimed;
           icon = Icons.verified_user_outlined;
           label = 'Claim Verified';
           break;
         case ItemStatus.returned:
-          bg = AppTheme.statusReturnedBg;
+          bg = isDark
+              ? AppTheme.statusReturnedBgDark
+              : AppTheme.statusReturnedBgLight;
+          border = isDark
+              ? AppTheme.statusReturnedBorderDark
+              : AppTheme.statusReturnedBorderLight;
           text = AppTheme.statusReturned;
           icon = Icons.handshake_outlined;
           label = 'Returned to Owner';
           break;
         case ItemStatus.cancelled:
-          bg = Colors.grey.shade100;
-          text = Colors.grey.shade700;
+          bg = isDark ? AppTheme.surfaceDarkSubtle : Colors.grey.shade100;
+          border = isDark ? AppTheme.cardBorderDark : Colors.grey.shade300;
+          text = isDark ? AppTheme.textMutedDark : Colors.grey.shade700;
           icon = Icons.cancel_outlined;
           label = 'Closed';
           break;
@@ -140,7 +170,7 @@ class StatusBadge extends StatelessWidget {
         decoration: BoxDecoration(
           color: bg,
           borderRadius: BorderRadius.circular(compact ? 6 : 8),
-          border: Border.all(color: text.withValues(alpha: 0.25)),
+          border: Border.all(color: border),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,

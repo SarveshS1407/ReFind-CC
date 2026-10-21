@@ -30,28 +30,28 @@ class EmptyState extends StatelessWidget {
               width: 72,
               height: 72,
               decoration: BoxDecoration(
-                color: AppTheme.primaryTeal.withValues(alpha: 0.08),
+                color: AppTheme.primaryIndigo.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, size: 36, color: AppTheme.primaryTeal),
+              child: Icon(icon, size: 36, color: AppTheme.primaryIndigoLight),
             ),
             const SizedBox(height: 16),
             Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF0F172A),
+                color: AppTheme.textPrimaryColor(context),
               ),
             ),
             const SizedBox(height: 8),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
-                color: Color(0xFF64748B),
+                color: AppTheme.textSecondaryColor(context),
                 height: 1.4,
               ),
             ),

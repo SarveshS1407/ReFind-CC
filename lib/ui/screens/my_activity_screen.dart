@@ -14,6 +14,70 @@ import 'handover_screen.dart';
 class MyActivityScreen extends ConsumerWidget {
   const MyActivityScreen({super.key});
 
+  void _showRespondDialog(
+    BuildContext context,
+    WidgetRef ref,
+    ClaimModel claim,
+  ) {
+    final responseController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Respond to Finder Request'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Finder requested: "${claim.moreInfoRequest ?? "Additional evidence"}"',
+              style: TextStyle(
+                fontSize: 13,
+                color: AppTheme.textSecondaryColor(context),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: responseController,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                hintText: 'Enter your additional proof or identifying answers here...',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (responseController.text.trim().isEmpty) return;
+              Navigator.pop(ctx);
+              final claimant = ref.read(currentUserProvider)!;
+              await ref
+                  .read(claimsProvider.notifier)
+                  .respondToMoreInfo(
+                    claimId: claim.id,
+                    claimant: claimant,
+                    responseMessage: responseController.text.trim(),
+                  );
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Response submitted to finder.'),
+                  ),
+                );
+              }
+            },
+            child: const Text('Submit Response'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentUser = ref.watch(currentUserProvider);
@@ -37,10 +101,11 @@ class MyActivityScreen extends ConsumerWidget {
       length: 3,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('My Activity'),
+          title: const Text('My Campus Activity'),
           bottom: TabBar(
-            labelColor: AppTheme.primaryTeal,
-            indicatorColor: AppTheme.primaryTeal,
+            labelColor: AppTheme.primaryIndigoLight,
+            unselectedLabelColor: AppTheme.textSecondaryColor(context),
+            indicatorColor: AppTheme.primaryIndigoLight,
             tabs: [
               Tab(text: 'Reports (${myReportedItems.length})'),
               Tab(text: 'Claims (${mySubmittedClaims.length})'),
@@ -94,6 +159,13 @@ class MyActivityScreen extends ConsumerWidget {
 
                       return Card(
                         margin: const EdgeInsets.only(bottom: 12),
+                        color: AppTheme.cardColor(context),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          side: BorderSide(
+                            color: AppTheme.borderColor(context),
+                          ),
+                        ),
                         child: Padding(
                           padding: const EdgeInsets.all(16),
                           child: Column(
@@ -103,40 +175,85 @@ class MyActivityScreen extends ConsumerWidget {
                                 children: [
                                   Text(
                                     item?.title ?? 'Item #${claim.itemId}',
-                                    style: const TextStyle(
-                                      fontSize: 15,
+                                    style: TextStyle(
+                                      fontSize: 15.5,
                                       fontWeight: FontWeight.w700,
-                                      color: Color(0xFF0F172A),
+                                      color: AppTheme.textPrimaryColor(context),
                                     ),
                                   ),
                                   const Spacer(),
-                                  _buildClaimBadge(claim.status),
+                                  _buildClaimBadge(context, claim.status),
                                 ],
                               ),
                               const SizedBox(height: 6),
                               Text(
                                 'Submitted ${Formatters.formatDate(claim.createdAt)}',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 12,
-                                  color: Color(0xFF64748B),
+                                  color: AppTheme.textSecondaryColor(context),
                                 ),
                               ),
                               const SizedBox(height: 10),
                               Text(
                                 'Proof: ${claim.proofDescription}',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 13,
-                                  color: Color(0xFF334155),
+                                  color: AppTheme.textPrimaryColor(context),
                                 ),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                               ),
+                              if (claim.isMoreInfoNeeded) ...[
+                                const SizedBox(height: 10),
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.syncWarningBg,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: AppTheme.syncWarningBorder,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.info,
+                                        size: 16,
+                                        color: AppTheme.syncWarning,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          'Finder: "${claim.moreInfoRequest}"',
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: Color(0xFF92400E),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                ElevatedButton.icon(
+                                  icon: const Icon(Icons.reply, size: 16),
+                                  label: const Text('Respond with More Info'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppTheme.primaryIndigo,
+                                  ),
+                                  onPressed: () =>
+                                      _showRespondDialog(context, ref, claim),
+                                ),
+                              ],
                               if (claim.isApproved &&
                                   claim.handoverCode != null) ...[
                                 const SizedBox(height: 12),
                                 ElevatedButton.icon(
                                   icon: const Icon(Icons.vpn_key),
-                                  label: const Text('View Handover Code'),
+                                  label: const Text(
+                                    'View 6-Digit Handover OTP',
+                                  ),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: AppTheme.statusReturned,
                                   ),
@@ -154,6 +271,27 @@ class MyActivityScreen extends ConsumerWidget {
                                       );
                                     }
                                   },
+                                ),
+                              ],
+                              if (claim.isPending ||
+                                  claim.isMoreInfoNeeded) ...[
+                                const SizedBox(height: 8),
+                                TextButton(
+                                  onPressed: () async {
+                                    await ref
+                                        .read(claimsProvider.notifier)
+                                        .withdrawClaim(
+                                          claimId: claim.id,
+                                          claimant: currentUser!,
+                                        );
+                                  },
+                                  child: const Text(
+                                    'Withdraw Claim',
+                                    style: TextStyle(
+                                      color: AppTheme.statusLost,
+                                      fontSize: 12,
+                                    ),
+                                  ),
                                 ),
                               ],
                             ],
@@ -194,14 +332,31 @@ class MyActivityScreen extends ConsumerWidget {
                       ...outboxTasks.map((task) {
                         return Card(
                           margin: const EdgeInsets.only(bottom: 10),
+                          color: AppTheme.cardColor(context),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(
+                              color: AppTheme.borderColor(context),
+                            ),
+                          ),
                           child: ListTile(
                             leading: const Icon(
                               Icons.cloud_upload_outlined,
                               color: AppTheme.syncWarning,
                             ),
-                            title: Text('Task: ${task.type}'),
+                            title: Text(
+                              'Task: ${task.type}',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                color: AppTheme.textPrimaryColor(context),
+                              ),
+                            ),
                             subtitle: Text(
                               'Queued at ${Formatters.formatDate(task.createdAt)} • Payload: ${task.payload['title'] ?? task.id}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppTheme.textSecondaryColor(context),
+                              ),
                             ),
                           ),
                         );
@@ -214,31 +369,42 @@ class MyActivityScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildClaimBadge(ClaimStatus status) {
+  Widget _buildClaimBadge(BuildContext context, ClaimStatus status) {
     Color bg;
     Color text;
     String label;
 
     switch (status) {
       case ClaimStatus.pending:
-        bg = AppTheme.statusClaimedBg;
+      case ClaimStatus.underReview:
+        bg = AppTheme.statusClaimedBgLight;
         text = AppTheme.statusClaimed;
         label = 'Pending Review';
         break;
+      case ClaimStatus.moreInfoNeeded:
+        bg = AppTheme.syncWarningBg;
+        text = AppTheme.syncWarning;
+        label = 'More Info Needed';
+        break;
       case ClaimStatus.approved:
-        bg = AppTheme.statusReturnedBg;
+        bg = AppTheme.statusReturnedBgLight;
         text = AppTheme.statusReturned;
         label = 'Approved / Verified';
         break;
       case ClaimStatus.rejected:
-        bg = AppTheme.statusLostBg;
+        bg = AppTheme.statusLostBgLight;
         text = AppTheme.statusLost;
         label = 'Declined';
         break;
       case ClaimStatus.handedOver:
-        bg = AppTheme.statusReturnedBg;
+        bg = AppTheme.statusReturnedBgLight;
         text = AppTheme.statusReturned;
         label = 'Completed';
+        break;
+      case ClaimStatus.withdrawn:
+        bg = AppTheme.surfaceSubtleColor(context);
+        text = AppTheme.textMutedColor(context);
+        label = 'Withdrawn';
         break;
     }
 
