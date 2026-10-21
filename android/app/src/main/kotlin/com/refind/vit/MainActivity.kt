@@ -1,4 +1,4 @@
-package com.codechefvit.finderskeepers.finders_keepers
+package com.refind.vit
 
 import io.flutter.embedding.android.FlutterActivity
 

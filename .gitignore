@@ -48,3 +48,8 @@ app.*.map.json
 .widget_preview/
 .vercel
 .env*
+
+# Binary build artifacts & APKs (exceeds GitHub 100MB limit)
+*.apk
+*.aab
+artifacts/android/*.apk
